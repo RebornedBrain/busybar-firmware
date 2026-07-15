@@ -1,3 +1,9 @@
+/**
+ * @file ble_streaming.h
+ * @brief API for streaming device state and screen over ble
+ *
+ * Streams data provided by state publisher to HM10 Uart characteristics
+ */
 #pragma once
 
 #include "../ble.h"
