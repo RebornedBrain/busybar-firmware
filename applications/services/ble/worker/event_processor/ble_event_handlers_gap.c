@@ -1,5 +1,3 @@
-#include "ble_event_handlers_gap.h"
-
 #include "../ble_worker_i.h"
 
 #define TAG "BleGAPEvent"
@@ -142,19 +140,5 @@ bool ble_event_handler_gap_receive_remote_features(size_t data_size, void* data,
     BleDeviceBase* peer = ble_connection_get_peer(conn);
     ble_device_base_set_features(peer, features->remote_features);
 
-    return true;
-}
-
-//------------------------------------------------------------------------------------
-///TODO: Move this handlers to commands folder
-bool ble_event_handler_gap_exit(size_t data_size, void* data, void* context) {
-    BLE_LOG_I("ble_event_handler_gap_exit");
-    UNUSED(data_size);
-    UNUSED(data);
-    BleWorker* instance = context;
-
-    if(ble_device_stop(instance->device)) {
-        furi_event_loop_stop(instance->event_loop);
-    }
     return true;
 }
