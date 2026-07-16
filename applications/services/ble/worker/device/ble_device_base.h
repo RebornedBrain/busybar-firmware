@@ -23,7 +23,7 @@ typedef struct BleDeviceBase BleDeviceBase;
  * Currently BSB is a remote and phone is a central
  */
 typedef enum {
-    BleDeviceRoleUnknown, /**< Stab to avoid zero value */
+    BleDeviceRoleUnknown, /**< Stub to avoid zero value */
     BleDeviceRoleRemote, /**< Remote device, can only advertise itself but cannot establish any connections */
     BleDeviceRoleCentral, /**< Central device, controls connection establishing and all parameters */
 
@@ -37,7 +37,7 @@ typedef enum {
  * added for future logic implementation
  */
 typedef enum {
-    BleDeviceAddressTypeUnknown, /**< Stab to avoid zero value */
+    BleDeviceAddressTypeUnknown, /**< Stub to avoid zero value */
     BleDeviceAddressTypeOrigin, /**< Public address provided to the device during manufacturing */
     BleDeviceAddressTypeResolvable, /**< Random address generated using rpa */
 
@@ -111,7 +111,7 @@ void ble_device_base_set_address(
  * @brief Converts address to string
  * @param[in] instance of base device
  * @param[in] type address type
- * @param[out] output pointer to string where result will placed
+ * @param[out] output pointer to string where result will be placed
  */
 void ble_device_base_format_address(
     BleDeviceBase* instance,

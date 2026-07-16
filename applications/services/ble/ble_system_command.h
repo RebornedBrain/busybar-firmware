@@ -39,7 +39,7 @@ BleIntercomFrameGeneric*
 /**
  * @brief Send frame as a request to another side
  *
- * @param[in] frame pointer to frame to be send
+ * @param[in] frame pointer to frame to be sent
  * @param[in] context for frame processing
  * @returns true if send operation was success, otherwise false
  */
@@ -48,9 +48,9 @@ bool ble_command_request_process(BleIntercomFrameGeneric* frame, void* context);
 /**
  * @brief Send frame as a response to another side
  *
- * @param[in] frame pointer to frame to be send
+ * @param[in] frame pointer to frame to be sent
  * @param[in] context for frame processing
- * @returns true if send operation was success, otherwise false
+ * @returns true if send operation was successful, otherwise false
  */
 bool ble_command_response_process(BleIntercomFrameGeneric* frame, void* context);
 
@@ -61,7 +61,7 @@ bool ble_command_response_process(BleIntercomFrameGeneric* frame, void* context)
  * and is called when some serious error happened and there is a need to shut down
  * all internal ble services.
  * 
- * @param[in] frame pointer to frame to be send
+ * @param[in] frame pointer to frame to be sent
  * @param[in] context for frame processing
  * @returns always false
  */

@@ -31,9 +31,9 @@ void ble_transmitter_set_enable(BleTransmitterGeneric* transport);
  * @param[in] transport to instance as a generic transmitter
  * @param[in] dev_addr address of remote device to which data will be sent
  * @param[in] handle pointer to particular characteristic
- * @param[in] data_size size of payload to be send
+ * @param[in] data_size size of payload to be sent
  * @param[in] data payload
- * @return true if data send was successful, otherwise false
+ * @return true if data send operation was successful, otherwise false
  */
 bool ble_transmitter_set_chunk(
     BleTransmitterGeneric* transport,
@@ -50,7 +50,7 @@ void ble_transmitter_set_more_data(BleTransmitterGeneric* transport);
 
 /**
  * @brief Cleanup all pending data without actual send
- * @param[in] instance transmitter instance
+ * @param[in] transport transmitter instance
  */
 void ble_transmitter_set_reset(BleTransmitterGeneric* transport);
 

@@ -44,7 +44,7 @@ void ble_device_free(BleDevice* instance);
  *
  * This operation performed once per service during initialization 
  * @param[in] instance of device
- * @param[in] service to be registered\
+ * @param[in] service to be registered
  * @return true if registration is done
  */
 bool ble_device_register_service(BleDevice* instance, BleServiceObject* service);
@@ -190,7 +190,7 @@ bool ble_device_process_read_request(
  *
  * Calls @ref ble_receiver_transfer_confirm
  *
- * @param[in] instance receiver instance
+ * @param[in] instance device instance
  * @param[in] handle handle of characteristic
  * @param[in] cccd_value property flags for characteristic
  */
