@@ -21,7 +21,7 @@ void ble_transmitter_set_free(BleTransmitterGeneric* transport);
 /**
  * @brief Enables sending data
  *
- * Otherwise all data put by @ref ble_transmitter_set_chunk will be ignored
+ * Otherwise all data put by ble_transmitter_set_chunk will be ignored
  * @param[in] transport to instance as a generic transmitter
  */
 void ble_transmitter_set_enable(BleTransmitterGeneric* transport);

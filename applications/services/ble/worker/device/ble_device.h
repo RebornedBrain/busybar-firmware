@@ -86,7 +86,7 @@ bool ble_device_connection_close(BleDevice* instance);
 /**
  * @brief Start updating parameters after connection was established
  *
- * Calls @ref ble_connection_start_update_parameters under the hood
+ * Calls ble_connection_start_update_parameters under the hood
  * @param[in] instance of device
  * @param[in] event_loop instance, through which processing is done
  */
@@ -187,8 +187,6 @@ bool ble_device_process_read_request(
 
 /**
  * @brief Send confirmation that write request is done
- *
- * Calls @ref ble_receiver_transfer_confirm
  *
  * @param[in] instance device instance
  * @param[in] handle handle of characteristic

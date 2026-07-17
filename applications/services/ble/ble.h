@@ -144,7 +144,7 @@ void ble_uart_set_tx_done_callback(
  * @param[in] ble pointer to the ble instance
  * @param[in] channel channel to which callback will be set
  * @param[in] data payload to be send
- * @param[in] ctx pointer to callback function context
+ * @param[in] data_size payload size
  */
 void ble_uart_tx_data(Ble* ble, BleUartChannel channel, const void* data, const size_t data_size);
 
@@ -166,5 +166,6 @@ void ble_uart_set_session_callback(Ble* ble, BleDataUpdatedCallback session_upda
  * and it works in same way as @ref ble_uart_tx_data
  *
  * @param[in] ble pointer to the ble instance
+ * @param[in] session new session value
  */
 void ble_uart_session_set_value(Ble* ble, const uint32_t session);

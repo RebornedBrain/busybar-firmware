@@ -79,8 +79,8 @@ void ble_command_unblock_with_result(Ble* instance, bool result);
 /**
  * @brief Array with command handlers. 
  *
- * Each side has its own command handlers implementation which are placed in @ref ble_system_command_u5.c
- * for U5 and and @ref ble_system_command_917.c for 917. This array is used for command engine initialization
+ * Each side has its own command handlers implementation which are placed in ble_system_command_u5.c
+ * for U5 and and ble_system_command_917.c for 917. This array is used for command engine initialization
  */
 extern const BleCommandItem ble_commands[];
 

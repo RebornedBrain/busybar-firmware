@@ -17,7 +17,7 @@ typedef struct BleStreaming BleStreaming;
  * @brief Allocates streaming instance for future use.
  *
  * @param[in] ble Pointer to Ble service.
- * @param[out] BleStreaming* Pointer to streaming instance.
+ * @return pointer to streaming instance.
  */
 BleStreaming* ble_streaming_alloc(Ble* ble);
 

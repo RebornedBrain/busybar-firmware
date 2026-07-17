@@ -35,6 +35,6 @@ bool ble_transmitter_indicate_chunk(
 
 /**
  * @brief Unblocks thread waiting for indication data to be send
- * @param[in] instance transmitter instance
+ * @param[in] transport transmitter instance
  */
 void ble_transmitter_indicate_done(BleTransmitterGeneric* transport);

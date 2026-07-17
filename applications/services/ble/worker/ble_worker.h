@@ -47,8 +47,8 @@ bool ble_worker_register_service(BleServiceObject* service);
 /**
  * @brief Send payload to characteristic set by handle
  * 
- * @param[in] handle unique pointer to particular ble characteristic. @ref BleServiceObject and all inner 
- * @ref BleCharacteristicObject get such handle during @ref ble_worker_register_service call
+ * @param[in] handle unique pointer to particular ble characteristic. BleServiceObject and all inner 
+ * BleCharacteristicObject get such handle during ble_worker_register_service call
  * @param[in] data_size size of payload to be send
  * @param[in] data payload
  * @param[in] cccd_value special field with properties which each characteristic in ble has

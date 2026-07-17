@@ -62,7 +62,7 @@ void ble_transmitter_reset(BleTransmitter* instance);
 /**
  * @brief Unblocks thread waiting for indication data to be send
  * 
- * Used when @ref rsi_ble_gatt_on_event_indicate_confirmation_event is triggered by nwp
+ * Used when rsi_ble_gatt_on_event_indicate_confirmation_event is triggered by nwp
  * @param[in] instance transmitter instance
  */
 void ble_transmitter_indication_done(BleTransmitter* instance);
@@ -70,7 +70,7 @@ void ble_transmitter_indication_done(BleTransmitter* instance);
 /**
  * @brief Allows sending more notification data to nwp
  *
- * Used when @ref rsi_ble_gap_ext_on_le_more_data_request_event is triggered by nwp
+ * Used when rsi_ble_gap_ext_on_le_more_data_request_event is triggered by nwp
  * @param[in] instance transmitter instance
  */
 void ble_transmitter_need_more_data(BleTransmitter* instance);
