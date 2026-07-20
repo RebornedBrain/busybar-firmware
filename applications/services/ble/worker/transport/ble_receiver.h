@@ -9,6 +9,8 @@ BleReceiverContext* ble_receiver_alloc(const uint8_t* peer_addr);
 
 void ble_receiver_free(BleReceiverContext* instance);
 
+void ble_receiver_enable(BleReceiverContext* instance);
+
 bool ble_receiver_process_write_request(
     BleReceiverContext* instance,
     BleServiceObject* service,
