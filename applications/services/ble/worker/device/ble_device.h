@@ -33,7 +33,11 @@ bool ble_device_connection_open(
 
 bool ble_device_connection_close(BleDevice* instance);
 
-void ble_device_connection_update(BleDevice* instance, FuriEventLoop* event_loop);
+void ble_device_connection_update(
+    BleDevice* instance,
+    FuriEventLoop* event_loop,
+    BleConnectionUpdateParametersDoneCallback update_done_cb,
+    void* ctx);
 
 bool ble_device_disconnect(BleDevice* instance);
 

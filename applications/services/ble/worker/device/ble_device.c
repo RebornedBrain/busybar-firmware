@@ -30,6 +30,8 @@ struct BleDevice {
     BleAdvertiseContext* advertise;
     BleTransmitter* transmitter;
     BleReceiverContext* receiver;
+    BleConnectionUpdateParametersDoneCallback update_done_cb;
+    void* update_done_context;
 };
 
 BleDevice* ble_device_alloc(BleTransmitter* transmitter) {
@@ -166,13 +168,29 @@ bool ble_device_connection_close(BleDevice* instance) {
 
 static void ble_device_connection_update_done(void* context) {
     BleDevice* instance = context;
+    ble_receiver_enable(instance->receiver);
     ble_transmitter_enable_notifications(instance->transmitter);
+
+    if(instance->update_done_cb) {
+        instance->update_done_cb(instance->update_done_context);
+        instance->update_done_cb = NULL;
+        instance->update_done_context = NULL;
+    }
 }
 
-void ble_device_connection_update(BleDevice* instance, FuriEventLoop* event_loop) {
+void ble_device_connection_update(
+    BleDevice* instance,
+    FuriEventLoop* event_loop,
+    BleConnectionUpdateParametersDoneCallback update_done_cb,
+    void* ctx) {
     furi_assert(instance);
     furi_assert(event_loop);
+    furi_assert(instance->update_done_cb == NULL);
+    furi_assert(update_done_cb);
+    furi_assert(ctx);
 
+    instance->update_done_cb = update_done_cb;
+    instance->update_done_context = ctx;
     ble_connection_start_update_parameters(
         instance->connection, event_loop, ble_device_connection_update_done, instance);
 }
