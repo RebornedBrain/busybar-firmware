@@ -1,9 +1,10 @@
 
 #include "ble_transmitter_i.h"
 
-#define BLE_TX_QUEUE_SIZE            (20)
-#define BLE_TX_QUEUE_PUT_TIMEOUT     (300)
-#define BLE_TRANSMIT_FAILURE_TIMEOUT (500)
+#define BLE_TX_QUEUE_SIZE                (20)
+#define BLE_TX_QUEUE_PUT_TIMEOUT         (300)
+#define BLE_TRANSMIT_FAILURE_TIMEOUT     (500)
+#define BLE_TRANSMIT_WAIT_ENABLE_TIMEOUT (50)
 
 typedef struct {
     FuriMessageQueue* tx_queue;
@@ -65,12 +66,16 @@ static void ble_transmitter_tx_queue_handler(FuriEventLoopObject* object, void* 
     BleTransmitterSetContext* instance = context;
 
     BleDataItemPtr item = NULL;
-    while(furi_message_queue_get(instance->tx_queue, &item, 0) == FuriStatusOk) {
-        if(!instance->send_buffer_error) {
-            ble_transmitter_send_item(instance, item);
+    if(instance->enabled) {
+        while(furi_message_queue_get(instance->tx_queue, &item, 0) == FuriStatusOk) {
+            if(!instance->send_buffer_error) {
+                ble_transmitter_send_item(instance, item);
+            }
+            free(item);
+            item = NULL;
         }
-        free(item);
-        item = NULL;
+    } else {
+        furi_delay_ms(BLE_TRANSMIT_WAIT_ENABLE_TIMEOUT);
     }
 }
 
@@ -86,11 +91,6 @@ bool ble_transmitter_set_chunk(
     const uint16_t data_size,
     const uint8_t* data) {
     BleTransmitterSetContext* instance = transport;
-
-    if(!instance->enabled) {
-        BLE_LOG_W("Notification drop");
-        return false;
-    }
 
     BleDataItemPtr item = malloc(sizeof(BleDataHeader) + data_size);
     item->header.data_size = data_size;
