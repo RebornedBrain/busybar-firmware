@@ -28,7 +28,6 @@ tests/ @ssecsd @iMalkav
 /applications/services/intercom/ @hedger @DrZlo13 @gsurkov
 /applications/services/light_sensor/ @hedger @nminaylov @imihajlow
 /applications/services/loader/ @hedger @DrZlo13 @gsurkov
-/applications/services/lottie/ @hedger @DrZlo13 @gsurkov
 /applications/services/matter/ @hedger @gsurkov @portasynthinca3
 /applications/services/mqtt/ @hedger @gsurkov @nminaylov
 /applications/services/network/ @hedger @gsurkov @nminaylov
@@ -78,4 +77,5 @@ tests/ @ssecsd @iMalkav
 /lib/setting_provider/ @hedger @vanyww
 /lib/settings_helpers/ @hedger @vanyww @nminaylov @portasynthinca3
 /lib/sl_glue/ @hedger @gsurkov @Skorpionm
+/lib/storage_utils/ @hedger @gsurkov @vanyww @nminaylov @portasynthinca3
 /lib/toolbox/ @hedger @gsurkov @vanyww @nminaylov @portasynthinca3

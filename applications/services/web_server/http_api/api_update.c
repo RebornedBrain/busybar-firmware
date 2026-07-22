@@ -1,11 +1,9 @@
 #include "http_api.h" // Should contain ConnectionContext and other common defs
 
 #include <furi.h>
-#include <furi_hal_power.h>
-#include <toolbox/path.h>
 
-#include <storage/storage.h>
-#include <toolbox/fetch/fetch_file_save.h>
+#include <storage_utils/temp_file.h>
+
 #include <applications/system/updater/updater.h>
 #include <applications/system/updater/updater_paths.h>
 #include <applications/system/updater/settings/settings.h>
@@ -39,7 +37,7 @@
 typedef struct {
     Storage* storage;
     Updater* updater;
-    FetchFileSave* file_save;
+    TempFile* update_file;
 
     FuriThreadPriority original_thread_priority;
 
@@ -120,7 +118,7 @@ static HttpUpdateHandlerCtx* alloc_raw_update_context() {
     HttpUpdateHandlerCtx* ctx = malloc(sizeof(HttpUpdateHandlerCtx));
     ctx->storage = furi_record_open(RECORD_STORAGE);
     ctx->updater = furi_record_open(RECORD_UPDATER);
-    ctx->file_save = NULL; // Will be allocated in header callback after validation
+    ctx->update_file = temp_file_alloc(ctx->storage);
 
     ctx->original_thread_priority = furi_thread_get_current_priority();
 
@@ -135,10 +133,10 @@ static void free_raw_update_context(HttpUpdateHandlerCtx* ctx) {
 
     furi_thread_set_current_priority(ctx->original_thread_priority);
 
-    if(ctx->file_save) {
-        fetch_file_save_remove(ctx->file_save);
-        fetch_file_save_free(ctx->file_save);
-        ctx->file_save = NULL;
+    if(ctx->update_file) {
+        temp_file_remove(ctx->update_file);
+        temp_file_free(ctx->update_file);
+        ctx->update_file = NULL;
     }
 
     if(ctx->updater) {
@@ -229,9 +227,9 @@ static void api_update_on_data_cb(struct mg_connection* conn, struct mg_iobuf* i
     ConnectionContext* conn_ctx = (ConnectionContext*)conn->data;
     HttpUpdateHandlerCtx* update_ctx = (HttpUpdateHandlerCtx*)conn_ctx->context;
 
-    if(!update_ctx || !update_ctx->file_save) {
+    if(!update_ctx || !update_ctx->update_file) {
         FURI_LOG_E(TAG, "on_data: Context or file saver invalid/closed. Draining.");
-        MG_REPLY_ERROR_CLOSE(conn, 500, "Update context invalid");
+        MG_REPLY_ERROR_CLOSE(conn, 409, "Update context invalid");
         mg_iobuf_del(io, 0, io->len); // Consume data to prevent further calls
         conn->is_draining = 1; // Mark connection to be closed
         return;
@@ -260,10 +258,10 @@ static void api_update_on_data_cb(struct mg_connection* conn, struct mg_iobuf* i
             return;
         }
 
-        if(!fetch_file_save_write(update_ctx->file_save, io->buf, data_len)) {
+        if(!temp_file_write(update_ctx->update_file, io->buf, data_len)) {
             FURI_LOG_E(
                 TAG, "on_data: Failed to write data to temp TAR file. Wrote %zu bytes.", data_len);
-            MG_REPLY_ERROR_CLOSE(conn, 500, "Failed to save update package (write error).");
+            MG_REPLY_ERROR_CLOSE(conn, 508, "Failed to save update package (write error).");
             conn->is_draining = 1;
             mg_iobuf_del(io, 0, io->len);
             return;
@@ -278,8 +276,8 @@ static void api_update_on_data_cb(struct mg_connection* conn, struct mg_iobuf* i
         FURI_LOG_I(TAG, "on_data: All data received (%zu bytes)", update_ctx->received_file_size);
         update_ctx->file_fully_received = true;
 
-        fetch_file_save_free(update_ctx->file_save);
-        update_ctx->file_save = NULL;
+        temp_file_free(update_ctx->update_file);
+        update_ctx->update_file = NULL;
 
         if(!handle_completed_upload_and_reboot(update_ctx, conn)) {
             // Error response already sent by handle_completed_upload_and_reboot
@@ -313,7 +311,7 @@ static void api_update_on_poll_cb(struct mg_connection* conn) {
 
     if(mg_timer_expired(&update_ctx->timeout_stamp, UPDATE_UPLOAD_IDLE_TIMEOUT_MS, mg_millis())) {
         FURI_LOG_E(TAG, "Connection data timeout (%lu)", conn->id);
-        MG_REPLY_ERROR_CLOSE(conn, 408, "Upload timeout");
+        MG_REPLY_TIMEOUT(conn, "Upload timeout");
         conn->is_draining = 1; // Force close hanging connection
     }
 }
@@ -367,19 +365,14 @@ static bool api_update_raw_hdr_callback(
     }
     FURI_LOG_I(TAG, "on_headers: Expecting file of size: %zu bytes", update_ctx->total_file_size);
 
-    // Allocate file saver (creates directory, removes existing file, opens for writing)
-    FuriString* temp_path = furi_string_alloc_set(UPDATER_DEFAULT_DOWNLOAD_PATH);
-    update_ctx->file_save = fetch_file_save_alloc_nonblocking(temp_path);
-    furi_string_free(temp_path);
-
     furi_thread_set_current_priority(FuriThreadPriorityLow);
 
-    if(!update_ctx->file_save) {
+    if(!temp_file_create(update_ctx->update_file, UPDATER_DEFAULT_DOWNLOAD_PATH)) {
         FURI_LOG_E(
             TAG,
             "on_headers: Failed to initialize file saver for: %s",
             UPDATER_DEFAULT_DOWNLOAD_PATH);
-        MG_REPLY_ERROR_CLOSE(conn, 500, "Failed to save update package (file init error).");
+        MG_REPLY_ERROR_CLOSE(conn, 508, "Failed to save update package (file init error).");
         conn->is_draining = 1;
         return true;
     }
@@ -445,7 +438,7 @@ static bool api_update_check_callback(
         break;
 
     default:
-        error_code = 500;
+        error_code = 503;
         break;
     }
 
@@ -599,7 +592,7 @@ static bool api_update_install_callback(
                     break;
 
                 default:
-                    error_code = 500;
+                    error_code = 503;
                     break;
                 }
 
@@ -850,7 +843,7 @@ static void api_update_autoupdate_set(struct mg_connection* conn, struct mg_http
         if(is_success) {
             MG_REPLY_OK(conn);
         } else {
-            MG_REPLY_INTERNAL_ERROR(conn, "Failed to apply updater settings");
+            MG_REPLY_SERVICE_UNAVAILABLE(conn, "Failed to apply updater settings");
         }
     } while(false);
 
