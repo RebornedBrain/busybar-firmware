@@ -20,6 +20,8 @@ BleReceiverContext* ble_receiver_alloc(const uint8_t* peer_addr) {
     instance->receive_sem = furi_semaphore_alloc(1, 1);
     memcpy(instance->peer_addr, peer_addr, DEVICE_ADDR_LEN);
     instance->enabled = false;
+    instance->rx_pending_handle = 0;
+    instance->rx_pending_cccd = 0;
     return instance;
 }
 
