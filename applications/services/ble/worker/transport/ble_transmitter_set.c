@@ -1,10 +1,9 @@
 
 #include "ble_transmitter_i.h"
 
-#define BLE_TX_QUEUE_SIZE                (20)
-#define BLE_TX_QUEUE_PUT_TIMEOUT         (300)
-#define BLE_TRANSMIT_FAILURE_TIMEOUT     (500)
-#define BLE_TRANSMIT_WAIT_ENABLE_TIMEOUT (50)
+#define BLE_TX_QUEUE_SIZE            (20)
+#define BLE_TX_QUEUE_PUT_TIMEOUT     (300)
+#define BLE_TRANSMIT_FAILURE_TIMEOUT (500)
 
 typedef struct {
     FuriMessageQueue* tx_queue;
@@ -74,8 +73,6 @@ static void ble_transmitter_tx_queue_handler(FuriEventLoopObject* object, void* 
             free(item);
             item = NULL;
         }
-    } else {
-        furi_delay_ms(BLE_TRANSMIT_WAIT_ENABLE_TIMEOUT);
     }
 }
 
