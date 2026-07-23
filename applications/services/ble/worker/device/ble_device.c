@@ -153,6 +153,8 @@ bool ble_device_connection_close(BleDevice* instance) {
         ble_receiver_free(instance->receiver);
         instance->connection = NULL;
         instance->receiver = NULL;
+        instance->update_done_cb = NULL;
+        instance->update_done_context = NULL;
         ble_service_registry_reset_cccds(instance->registry);
 
         if(instance->state != BleDeviceStateStopping) {
