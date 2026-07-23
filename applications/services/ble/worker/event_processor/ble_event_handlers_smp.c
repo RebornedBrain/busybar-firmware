@@ -69,9 +69,6 @@ bool ble_event_handler_smp_security_keys(size_t data_size, void* data, void* con
         }
 
         BLE_LOG_I("RPA keys saved");
-
-        ble_worker_invoke_connect_callback(instance);
-
     } while(false);
 
     return true;
