@@ -41,6 +41,8 @@ BleDevice* ble_device_alloc(BleTransmitter* transmitter) {
     instance->state = BleDeviceStateIdle;
     instance->base = ble_device_base_alloc(BleDeviceRoleRemote);
     instance->registry = ble_service_registry_alloc();
+    instance->update_done_cb = NULL;
+    instance->update_done_context = NULL;
 
     ble_device_set_mtu(instance, BLE_MAX_MTU_SIZE);
 
