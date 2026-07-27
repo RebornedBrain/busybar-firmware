@@ -157,7 +157,8 @@ bool ble_device_connection_close(BleDevice* instance) {
         instance->update_done_context = NULL;
         ble_service_registry_reset_cccds(instance->registry);
 
-        if(instance->state != BleDeviceStateStopping) {
+        if(instance->state != BleDeviceStateStopping &&
+           instance->state != BleDeviceStateForgetting) {
             instance->state = BleDeviceStateAdvertising;
             ble_device_stop_advertise(instance);
 
@@ -290,6 +291,13 @@ bool ble_device_forget_paired(BleDevice* instance) {
     furi_assert(instance);
 
     BleDeviceState prev_state = instance->state;
+
+    if(prev_state == BleDeviceStateConnected && ble_device_disconnect(instance)) {
+        BLE_LOG_I("Disconnect before forget");
+        instance->state = BleDeviceStateForgetting;
+        return false;
+    }
+
     if(prev_state == BleDeviceStateAdvertising) {
         ble_device_stop_advertise(instance);
     }
