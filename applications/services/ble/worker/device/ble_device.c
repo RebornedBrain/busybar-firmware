@@ -310,6 +310,10 @@ bool ble_device_forget_paired(BleDevice* instance) {
         ble_device_start_advertise(instance);
     }
 
+    if(instance->state == BleDeviceStateForgetting) {
+        instance->state = BleDeviceStateIdle;
+    }
+
     if(result) BLE_LOG_I("Security data removed");
     return result;
 }

@@ -21,7 +21,9 @@ bool ble_event_handler_cmd_forget_paired(size_t data_size, void* data, void* con
     BleWorker* instance = context;
 
     bool result = ble_device_forget_paired(instance->device);
-    if(result) {
+    BleDeviceState state = ble_device_get_state(instance->device);
+
+    if(state != BleDeviceStateForgetting) {
         instance->pending_command->result = result;
         api_lock_unlock(instance->pending_command->api_lock);
         instance->pending_command = NULL;

@@ -116,7 +116,7 @@ void ble_worker_receive_confirm(uint16_t handle, uint8_t cccd_value) {
 
 bool ble_worker_forget_pairing() {
     api_lock_relock(ble_worker_instance->api_lock);
-    BleWorkerCmdEventData cmd = {.api_lock = ble_worker_instance->api_lock};
+    BleWorkerCmdEventData cmd = {.api_lock = ble_worker_instance->api_lock, .result = false};
 
     ble_worker_instance->pending_command = &cmd;
     ble_incoming_nwp_event_processor_spawn_event(
