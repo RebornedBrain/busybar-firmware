@@ -22,9 +22,8 @@ bool ble_event_handler_cmd_exit(size_t data_size, void* data, void* context);
 
 /**
  * @brief Forget paired device command initiated by ble_worker_forget_pairing
- * Also it can be initiated second time in disconnect event in order to guarantee
- * that bsb will forget its pairing only after disconnecting from connected remote 
- * device
+ * It can also be initiated a second time from the disconnect event to guarantee
+ * that the device forgets its pairing only after disconnecting from the remote
  * @param[in] data_size payload size
  * @param[in] data payload data
  * @param[in] context used for call
