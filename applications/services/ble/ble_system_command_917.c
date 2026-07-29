@@ -3,6 +3,7 @@
 #include "worker/ble_worker.h"
 #include "worker/ble_worker_util.h"
 
+#include "service/target/ble_service_target.h"
 //#define BLE_DEBUG_PRINT_SERVICE_DATA_AFTER_INIT
 
 #define TAG "BLE_917"
@@ -77,6 +78,11 @@ static bool ble_command_init_request(BleIntercomFrameGeneric* frame, void* conte
 
     Ble* instance = context;
     instance->worker = ble_worker_init(ble_connection_changed_callback, context);
+
+    for(uint8_t i = 0; i < BleServiceIndexCount; i++) {
+        ble_service_target_store_extra_data(instance->services[i], instance->worker);
+    }
+
     ble_set_service_post_process_callback(instance, ble_service_init_wait_callback);
 
     return ble_command_response_process(frame, context);

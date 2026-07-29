@@ -167,9 +167,9 @@ bool ble_service_write_char_data_or_cccd_by_handle(
     return cccd_modified;
 }
 
-void ble_service_store_worker(BleServiceObject* instance, BleWorker* worker) {
+void ble_service_target_store_extra_data(BleServiceObject* instance, void* extra_data) {
     furi_assert(instance);
-    furi_assert(worker);
+    furi_assert(extra_data);
     furi_assert(instance->worker == NULL);
-    instance->worker = worker;
+    instance->worker = extra_data;
 }
