@@ -56,7 +56,7 @@ typedef struct {
     uint8_t initial_data_size; /**< Set size of data buffer*/
 
     const char* name; /** Name for identification and logging */
-} BleCharacteristicDescriptor;
+} BleCharacteristicConfig;
 
 /**
  * @brief Service configuration
@@ -69,7 +69,7 @@ typedef struct {
     BleServiceIndex index; /**< Index used to identify service in intercom packets and api */
     uint8_t char_count; /**< Amount of characteristics inside this service */
 
-    const BleCharacteristicDescriptor* char_descriptors; /**< Config per each characteristic */
+    const BleCharacteristicConfig* char_configs; /**< Config per each characteristic */
     const char* name; /** Name for identification and logging */
 
     BleServiceInit init; /** Init callback, must return true in order to init service successfully */

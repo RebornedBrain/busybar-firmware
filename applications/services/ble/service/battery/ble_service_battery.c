@@ -3,7 +3,7 @@
 #define TAG "BleBattery"
 
 //==========================================================
-static const BleCharacteristicDescriptor battery_service_characteristics[] = {
+static const BleCharacteristicConfig battery_service_characteristics[] = {
     {
         .intercom_index = BleSrvBatteryCharacterIndexBatteryLevel,
         .name = "Battery Level",
@@ -36,5 +36,5 @@ const BleServiceDescriptor ble_service_config_battery = {
     .run = ble_service_battery_run,
     .index = BleServiceIndexBattery,
     .char_count = COUNT_OF(battery_service_characteristics),
-    .char_descriptors = battery_service_characteristics,
+    .char_configs = battery_service_characteristics,
 };

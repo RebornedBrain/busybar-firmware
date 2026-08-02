@@ -80,7 +80,7 @@ static bool ble_service_device_info_init_u5(void* object) {
 #endif
 
 //==========================================================
-static const BleCharacteristicDescriptor device_info_service_characteristics[] = {
+static const BleCharacteristicConfig device_info_service_characteristics[] = {
     {
         .intercom_index = BleSrvDeviceInfoCharacterIndexSerialNumber,
         .name = "Serial Number",
@@ -121,5 +121,5 @@ const BleServiceDescriptor ble_service_config_device_info = {
 #endif
     .index = BleServiceIndexDeviceInfo,
     .char_count = COUNT_OF(device_info_service_characteristics),
-    .char_descriptors = device_info_service_characteristics,
+    .char_configs = device_info_service_characteristics,
 };

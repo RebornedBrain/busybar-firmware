@@ -1,6 +1,6 @@
 #include "generic_access_i.h"
 
-static const BleCharacteristicDescriptor generic_access_service_characteristics[] = {
+static const BleCharacteristicConfig generic_access_service_characteristics[] = {
     {
         .intercom_index = BleGenericAccessCharacterDeviceName,
         .name = "Device Name",
@@ -31,5 +31,5 @@ const BleServiceDescriptor ble_service_generic_access = {
     .run = ble_service_generic_access_run,
     .index = BleServiceIndexGenericAccess,
     .char_count = COUNT_OF(generic_access_service_characteristics),
-    .char_descriptors = generic_access_service_characteristics,
+    .char_configs = generic_access_service_characteristics,
 };

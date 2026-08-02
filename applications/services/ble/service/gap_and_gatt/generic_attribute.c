@@ -14,7 +14,7 @@ static bool ble_service_generic_attribute_init(void* object) {
 }
 
 //==========================================================
-static const BleCharacteristicDescriptor generic_attribute_service_characteristics[] = {
+static const BleCharacteristicConfig generic_attribute_service_characteristics[] = {
     {
         .intercom_index = BleGenericAttributeCharacterServiceChanged,
         .name = "Service Changed",
@@ -36,5 +36,5 @@ const BleServiceDescriptor ble_service_generic_attribute = {
     .init = ble_service_generic_attribute_init,
     .index = BleServiceIndexGenericAttribute,
     .char_count = COUNT_OF(generic_attribute_service_characteristics),
-    .char_descriptors = generic_attribute_service_characteristics,
+    .char_configs = generic_attribute_service_characteristics,
 };

@@ -42,7 +42,7 @@ static bool ble_service_uart_init(void* object) {
     return true;
 }
 
-static const BleCharacteristicDescriptor nordic_uart_service_characteristics[] = {
+static const BleCharacteristicConfig nordic_uart_service_characteristics[] = {
     {
         .intercom_index = BleUartCharacteristicIndexRx,
         .name = "Uart Rx",
@@ -85,14 +85,14 @@ const BleServiceDescriptor ble_service_config_nordic_uart = {
 #endif
     .index = BleServiceIndexNordicUart,
     .char_count = COUNT_OF(nordic_uart_service_characteristics),
-    .char_descriptors = nordic_uart_service_characteristics,
+    .char_configs = nordic_uart_service_characteristics,
     .init = ble_service_uart_init,
 };
 
 //==========================================================
 //==========================================================
 
-static const BleCharacteristicDescriptor hm10_uart_service_characteristics[] = {
+static const BleCharacteristicConfig hm10_uart_service_characteristics[] = {
     {
         .intercom_index = BleUartCharacteristicIndexRx,
         .name = "HM10 Rx",
@@ -125,6 +125,6 @@ const BleServiceDescriptor ble_service_config_hm10_uart = {
 #endif
     .index = BleServiceIndexHm10Uart,
     .char_count = COUNT_OF(hm10_uart_service_characteristics),
-    .char_descriptors = hm10_uart_service_characteristics,
+    .char_configs = hm10_uart_service_characteristics,
     .init = ble_service_uart_init,
 };

@@ -20,7 +20,7 @@ typedef struct BleCharacteristicObject BleCharacteristicObject;
  * @return pointer to characteristic instance
  */
 BleCharacteristicObject* ble_characteristic_alloc(
-    const BleCharacteristicDescriptor* config,
+    const BleCharacteristicConfig* config,
     BleServiceObject* parent_service);
 
 /**
@@ -85,8 +85,7 @@ bool ble_characteristic_is_modified(BleCharacteristicObject* instance);
  * @param[in] instance pointer to characteristic instance
  * @return pointer to characteristic config struct
  */
-const BleCharacteristicDescriptor*
-    ble_characteristic_get_config(BleCharacteristicObject* instance);
+const BleCharacteristicConfig* ble_characteristic_get_config(BleCharacteristicObject* instance);
 
 /**
  * @brief Store characteristic handle retrieved during registration process.
