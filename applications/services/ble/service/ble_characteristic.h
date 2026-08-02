@@ -21,7 +21,7 @@ void ble_characteristic_set_data(
 
 bool ble_characteristic_is_modified(BleCharacteristicObject* instance);
 
-void ble_characteristic_tx_done(BleCharacteristicObject* instance);
+
 
 const BleCharacteristicDescriptor*
     ble_characteristic_get_config(BleCharacteristicObject* instance);

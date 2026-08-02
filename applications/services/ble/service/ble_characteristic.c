@@ -150,7 +150,7 @@ static void ble_characteristic_set_data_from_remote(
     }
 }
 
-void ble_characteristic_tx_done(BleCharacteristicObject* instance) {
+static void ble_characteristic_tx_done(BleCharacteristicObject* instance) {
     furi_assert(instance);
     if(instance->tx_done_cb) {
         instance->tx_done_cb(instance->tx_done_ctx);
