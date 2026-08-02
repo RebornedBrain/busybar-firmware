@@ -27,7 +27,7 @@ static const BleCharacteristicConfig generic_attribute_service_characteristics[]
     },
 };
 
-const BleServiceDescriptor ble_service_generic_attribute = {
+const BleServiceConfig ble_service_generic_attribute = {
     .name = "Generic Attribute",
 #if defined(BSB_MCU_SI917)
     .uuid = {.Char_UUID_16 = 0x1801},

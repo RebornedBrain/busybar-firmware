@@ -26,7 +26,7 @@ static const BleCharacteristicConfig battery_service_characteristics[] = {
     },
 };
 
-const BleServiceDescriptor ble_service_config_battery = {
+const BleServiceConfig ble_service_config_battery = {
     .name = "Battery Service",
 #if defined(BSB_MCU_SI917)
     .uuid = {.Char_UUID_16 = 0x180F},

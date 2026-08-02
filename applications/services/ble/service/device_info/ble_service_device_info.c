@@ -110,7 +110,7 @@ static const BleCharacteristicConfig device_info_service_characteristics[] = {
     },
 };
 
-const BleServiceDescriptor ble_service_config_device_info = {
+const BleServiceConfig ble_service_config_device_info = {
     .name = "Device Information",
 #if defined(BSB_MCU_SI917)
     .uuid = {.Char_UUID_16 = 0x180A},

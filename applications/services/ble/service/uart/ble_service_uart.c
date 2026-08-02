@@ -77,7 +77,7 @@ static const BleCharacteristicConfig nordic_uart_service_characteristics[] = {
 
 //==========================================================
 
-const BleServiceDescriptor ble_service_config_nordic_uart = {
+const BleServiceConfig ble_service_config_nordic_uart = {
     .name = "Nordic UART",
 #if defined(BSB_MCU_SI917)
     .uuid = {.Char_UUID_128 = UART_SERVICE_UUID},
@@ -117,7 +117,7 @@ static const BleCharacteristicConfig hm10_uart_service_characteristics[] = {
 
 //==========================================================
 
-const BleServiceDescriptor ble_service_config_hm10_uart = {
+const BleServiceConfig ble_service_config_hm10_uart = {
     .name = "HM10 UART",
 #if defined(BSB_MCU_SI917)
     .uuid = {.Char_UUID_128 = HM10_UART_SERVICE_UUID},

@@ -74,4 +74,4 @@ typedef struct {
 
     BleServiceInit init; /** Init callback, must return true in order to init service successfully */
     BleServiceRun run; /** Run callback, must return true in order to run service successfully  */
-} BleServiceDescriptor;
+} BleServiceConfig;

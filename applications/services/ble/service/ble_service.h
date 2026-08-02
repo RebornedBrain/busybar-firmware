@@ -23,7 +23,7 @@ typedef struct BleServiceObject BleServiceObject;
  * @returns pointer to service instance
  */
 BleServiceObject* ble_service_alloc(
-    const BleServiceDescriptor* service_config,
+    const BleServiceConfig* service_config,
     FuriMessageQueue* message_queue,
     IntercomChannel* intercom_ch);
 
