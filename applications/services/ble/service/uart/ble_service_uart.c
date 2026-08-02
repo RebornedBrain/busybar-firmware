@@ -84,7 +84,6 @@ const BleServiceDescriptor ble_service_config_nordic_uart = {
     .uuid_size = 16,
 #endif
     .index = BleServiceIndexNordicUart,
-    .init_method = BleServiceInitMethodRemote,
     .char_count = COUNT_OF(nordic_uart_service_characteristics),
     .char_descriptors = nordic_uart_service_characteristics,
     .init = ble_service_uart_init,
@@ -125,7 +124,6 @@ const BleServiceDescriptor ble_service_config_hm10_uart = {
     .uuid_size = 16,
 #endif
     .index = BleServiceIndexHm10Uart,
-    .init_method = BleServiceInitMethodRemote,
     .char_count = COUNT_OF(hm10_uart_service_characteristics),
     .char_descriptors = hm10_uart_service_characteristics,
     .init = ble_service_uart_init,

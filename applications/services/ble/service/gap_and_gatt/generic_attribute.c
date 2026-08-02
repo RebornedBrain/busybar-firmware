@@ -35,7 +35,6 @@ const BleServiceDescriptor ble_service_generic_attribute = {
 #endif
     .init = ble_service_generic_attribute_init,
     .index = BleServiceIndexGenericAttribute,
-    .init_method = BleServiceInitMethodRemote,
     .char_count = COUNT_OF(generic_attribute_service_characteristics),
     .char_descriptors = generic_attribute_service_characteristics,
 };

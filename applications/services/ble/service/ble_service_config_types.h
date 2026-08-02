@@ -33,7 +33,7 @@ typedef struct {
     uint8_t char_properties;
 #endif
     uint8_t initial_data_size;
-    uint8_t security_permissions;
+    
     const char* name;
 } BleCharacteristicDescriptor;
 
@@ -44,7 +44,7 @@ typedef struct {
 #endif
     BleServiceIndex index;
     uint8_t char_count;
-    BleServiceInitMethod init_method;
+    
     const BleCharacteristicDescriptor* char_descriptors;
     const char* name;
 

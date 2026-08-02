@@ -30,7 +30,6 @@ const BleServiceDescriptor ble_service_generic_access = {
     .init = ble_service_generic_access_init,
     .run = ble_service_generic_access_run,
     .index = BleServiceIndexGenericAccess,
-    .init_method = BleServiceInitMethodRemote,
     .char_count = COUNT_OF(generic_access_service_characteristics),
     .char_descriptors = generic_access_service_characteristics,
 };

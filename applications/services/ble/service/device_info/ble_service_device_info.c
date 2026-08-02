@@ -120,7 +120,6 @@ const BleServiceDescriptor ble_service_config_device_info = {
     .init = ble_service_device_info_init_u5,
 #endif
     .index = BleServiceIndexDeviceInfo,
-    .init_method = BleServiceInitMethodRemote,
     .char_count = COUNT_OF(device_info_service_characteristics),
     .char_descriptors = device_info_service_characteristics,
 };
