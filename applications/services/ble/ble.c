@@ -90,28 +90,8 @@ static void ble_custom_event_callback(uint32_t events, void* context) {
         }
 
         if(events & BleEventTypeIntercomDeinit) {
-            ble_command_unblock_with_result(instance, false);
-            ble_invoke_retry_command_on_internal_event(
-                instance,
-                BleCommandDeinit,
-                BleEventTypeIntercomDeinit,
-                BLE_COMMAND_INVOKE_RETRY_TIMEOUT);
-        }
-
-        if(events & BleEventTypeInitOnStart) {
-            ble_invoke_retry_command_on_internal_event(
-                instance,
-                BleCommandInit,
-                BleEventTypeInitOnStart,
-                BLE_COMMAND_INVOKE_RETRY_TIMEOUT);
-        }
-
-        if(events & BleEventTypeEnableOnStart) {
-            ble_invoke_retry_command_on_internal_event(
-                instance,
-                BleCommandEnable,
-                BleEventTypeEnableOnStart,
-                BLE_COMMAND_INVOKE_RETRY_TIMEOUT);
+            ble_command_engine_unblock_with_result(instance->engine, NULL, 0, false);
+            ble_command_engine_put_command_no_wait(instance->engine, BleCommandDeinit);
         }
 
         if(events & BleEventTypeFrameReceived) {

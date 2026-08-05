@@ -83,9 +83,3 @@ void ble_command_unblock_with_result(Ble* instance, bool result);
  * for U5 and and ble_system_command_917.c for 917. This array is used for command engine initialization
  */
 extern const BleCommandItem ble_commands[];
-
-void ble_invoke_retry_command_on_internal_event(
-    Ble* instance,
-    BleSystemCommand command,
-    BleEventType retry_event,
-    uint32_t retry_timeout);
