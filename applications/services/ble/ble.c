@@ -197,12 +197,7 @@ static Ble* ble_alloc() {
 #if !defined(BSB_MCU_SI917)
     ble_http_repeater_init();
     instance->streaming = ble_streaming_alloc(instance);
-
     instance->on_status_change = furi_pubsub_alloc();
-    instance->current_command_lock = furi_mutex_alloc(FuriMutexTypeNormal);
-    instance->current_command_api_lock = api_lock_alloc_locked();
-    instance->current_command_size = sizeof(BleIntercomFrameHeader) + sizeof(bool);
-    instance->current_command = malloc(instance->current_command_size);
 #endif
 
     furi_record_create(RECORD_BLE, instance);

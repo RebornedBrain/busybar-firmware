@@ -53,10 +53,6 @@ struct Ble {
 #if !defined(BSB_MCU_SI917)
     BleStreaming* streaming;
     FuriPubSub* on_status_change;
-    FuriApiLock current_command_api_lock;
-    FuriMutex* current_command_lock;
-    BleCommand* current_command;
-    size_t current_command_size;
 #else
     BleWorker* worker;
 #endif
