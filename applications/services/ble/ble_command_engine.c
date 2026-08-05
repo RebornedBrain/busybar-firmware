@@ -4,8 +4,14 @@
 struct BleCommandEngine {
     uint8_t commands_count;
     const BleCommandItem* commands;
-    BleCommandEngineExtractFrame extract_frame;
     Ble* ble;
+
+    FuriMessageQueue* command_queue;
+    FuriMutex* current_command_lock;
+    BleCommand* current_command;
+
+    BleCommandIntercomFrame* frame;
+    size_t frame_size;
 };
 
 ///TODO: Here we should make some factory which
