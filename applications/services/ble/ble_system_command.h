@@ -27,14 +27,21 @@ typedef enum {
 } BleSystemCommand;
 
 /**
- * @brief Get pointer to frame from different source
+ * @brief Command handler callback function type
  *
- * @param[in] instance pointer to the ble instance
- * @param[in] source source with frame pending for processing
- * @returns pointer to frame for further processing
+ * @param[in] frame Pointer to frame
+ * @param[in] context Execution context
+ * @param[out] true when handling was fine, otherwise false
  */
-BleIntercomFrameGeneric*
-    ble_command_extract_frame(Ble* instance, BleCommandEngineExtractFrameSource source);
+typedef bool (*BleCommandHandler)(BleIntercomFrameGeneric* frame, void* context);
+
+/**
+ * @brief Struct for one command handlers
+ */
+typedef struct {
+    BleCommandHandler request;
+    BleCommandHandler response;
+} BleCommandItem;
 
 /**
  * @brief Send frame as a request to another side

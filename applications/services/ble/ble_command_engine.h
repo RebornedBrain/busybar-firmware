@@ -1,42 +1,7 @@
 #pragma once
 
 #include "ble_intercom_types.h"
-#include "ble.h"
-
-/**
- * @brief Enumeration of possible frame source
- */
-typedef enum {
-    BleCommandEngineExtractFrameSourceCommandBuffer, /**< Extract frame from command buffer */
-    BleCommandEngineExtractFrameSourceIntercomBuffer, /**< Extract frame from intercom buffer */
-} BleCommandEngineExtractFrameSource;
-
-/**
- * @brief Extract frame callback function type
- *
- * @param[in] instance Pointer to ble instance
- * @param[in] source Source from where frame should be taken
- * @param[out] BleIntercomFrameGeneric Pointer to frame struct
- */
-typedef BleIntercomFrameGeneric* (
-    *BleCommandEngineExtractFrame)(Ble* instance, BleCommandEngineExtractFrameSource source);
-
-/**
- * @brief Command handler callback function type
- *
- * @param[in] frame Pointer to frame
- * @param[in] context Execution context
- * @param[out] true when handling was fine, otherwise false
- */
-typedef bool (*BleCommandHandler)(BleIntercomFrameGeneric* frame, void* context);
-
-/**
- * @brief Struct for one command handlers
- */
-typedef struct {
-    BleCommandHandler request;
-    BleCommandHandler response;
-} BleCommandItem;
+#include "ble_system_command.h"
 
 /**
  * @brief Opaque command engine handle
