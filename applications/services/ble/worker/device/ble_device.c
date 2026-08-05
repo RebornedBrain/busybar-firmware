@@ -5,7 +5,7 @@
 #include "../transport/ble_receiver.h"
 
 #include "../_nwp_callbacks/ble_nwp_headers.h"
-#include "../../ble_common.h"
+#include "../../ble_log.h"
 
 #define TAG "BleDevice"
 

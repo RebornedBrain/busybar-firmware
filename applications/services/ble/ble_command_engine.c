@@ -1,4 +1,5 @@
 #include "ble_command_engine.h"
+#include "ble_log.h"
 
 struct BleCommandEngine {
     uint8_t commands_count;
