@@ -42,7 +42,7 @@ struct Ble {
     BleIntercomFrameGeneric mailbox;
     BleCommandEngine* engine;
 
-    FuriMessageQueue* message_queue;
+    FuriMessageQueue* service_queue;
     FuriEventLoop* event_loop;
     Intercom* intercom;
     IntercomChannel* intercom_ch;

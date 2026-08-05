@@ -54,7 +54,7 @@ static void
 static void ble_allocate_services(Ble* instance) {
     for(size_t i = 0; i < BleServiceIndexCount; i++) {
         instance->services[i] =
-            ble_service_alloc(service_config[i], instance->message_queue, instance->intercom_ch);
+            ble_service_alloc(service_config[i], instance->service_queue, instance->intercom_ch);
     }
 }
 
@@ -71,10 +71,10 @@ static void ble_custom_event_handler_init(Ble* instance) {
 static void ble_event_loop_msg_queue_handler(FuriEventLoopObject* object, void* context) {
     furi_assert(context);
     Ble* ble = context;
-    furi_assert(object == ble->message_queue);
+    furi_assert(object == ble->service_queue);
 
     BleServiceObject* service = NULL;
-    if(furi_message_queue_get(ble->message_queue, &service, FuriWaitForever) == FuriStatusOk) {
+    if(furi_message_queue_get(ble->service_queue, &service, FuriWaitForever) == FuriStatusOk) {
         bool result = ble_service_process(service);
         ble_check_invoke_service_process_result(ble, service, result);
     } else
@@ -180,9 +180,11 @@ static Ble* ble_alloc() {
     furi_event_loop_set_custom_event_callback(
         instance->event_loop, ble_custom_event_callback, instance);
 
+    instance->service_queue =
+        furi_message_queue_alloc(BleServiceIndexCount, sizeof(BleServiceObject*));
     furi_event_loop_subscribe_message_queue(
         instance->event_loop,
-        instance->message_queue,
+        instance->service_queue,
         FuriEventLoopEventIn,
         ble_event_loop_msg_queue_handler,
         instance);
