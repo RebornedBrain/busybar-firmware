@@ -21,17 +21,28 @@ BleCommandEngine* ble_command_engine_alloc(
     Ble* ble,
     const BleCommandItem* commands,
     uint8_t commands_count,
-    BleCommandEngineExtractFrame extract_frame) {
+    FuriEventLoop* event_loop) {
     furi_assert(ble);
     furi_assert(commands);
     furi_assert(commands_count > 0);
-    furi_assert(extract_frame);
 
     BleCommandEngine* instance = malloc(sizeof(BleCommandEngine));
     instance->ble = ble;
+
     instance->commands = commands;
     instance->commands_count = commands_count;
-    instance->extract_frame = extract_frame;
+
+    instance->current_command_lock = furi_mutex_alloc(FuriMutexTypeNormal);
+    instance->current_command = NULL;
+    instance->command_queue = furi_message_queue_alloc(10, sizeof(BleCommand*));
+
+    furi_event_loop_subscribe_message_queue(
+        event_loop,
+        instance->command_queue,
+        FuriEventLoopEventIn,
+        ble_command_engine_queue_handler,
+        instance);
+
     return instance;
 }
 

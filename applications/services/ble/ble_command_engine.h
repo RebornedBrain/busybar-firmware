@@ -21,7 +21,7 @@ BleCommandEngine* ble_command_engine_alloc(
     Ble* ble,
     const BleCommandItem* commands,
     uint8_t commands_count,
-    BleCommandEngineExtractFrame extract_frame);
+    FuriEventLoop* event_loop);
 
 /**
  * @brief Perform command processing, command frame can be extracted from command 
