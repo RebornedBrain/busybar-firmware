@@ -95,15 +95,10 @@ static void ble_custom_event_callback(uint32_t events, void* context) {
         }
 
         if(events & BleEventTypeFrameReceived) {
-            ble_command_engine_run(
-                instance->engine, BleCommandEngineExtractFrameSourceIntercomBuffer);
+            ble_command_engine_run(instance->engine, &instance->mailbox);
             furi_semaphore_release(instance->mailbox_lock);
         }
 
-        if(events & BleEventTypeApiCommand) {
-            ble_command_engine_run(
-                instance->engine, BleCommandEngineExtractFrameSourceCommandBuffer);
-        }
         furi_mutex_release(instance->ble_lock);
     } else
         BLE_LOG_W("Unable to lock BLE");

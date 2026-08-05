@@ -46,13 +46,9 @@ BleCommandEngine* ble_command_engine_alloc(
     return instance;
 }
 
-bool ble_command_engine_run(BleCommandEngine* instance, BleCommandEngineExtractFrameSource source) {
+bool ble_command_engine_run(BleCommandEngine* instance, BleIntercomFrameGeneric* frame) {
     furi_assert(instance);
-    furi_assert(
-        source == BleCommandEngineExtractFrameSourceCommandBuffer ||
-        source == BleCommandEngineExtractFrameSourceIntercomBuffer);
-
-    BleIntercomFrameGeneric* frame = instance->extract_frame(instance->ble, source);
+    furi_assert(frame);
 
     const BleIntercomFrameType frame_type = frame->header.frame_type;
     const BleCommandCode command = (BleCommandCode)frame->header.command;

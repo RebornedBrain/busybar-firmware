@@ -31,4 +31,4 @@ BleCommandEngine* ble_command_engine_alloc(
  * @param[in] source Source from where frame should be taken
  * @param[out] true when command was processed successfully, otherwise false
  */
-bool ble_command_engine_run(BleCommandEngine* instance, BleCommandEngineExtractFrameSource source);
+bool ble_command_engine_run(BleCommandEngine* instance, BleIntercomFrameGeneric* frame);
