@@ -11,9 +11,6 @@ static void
     BLE_LOG_D("ble_connection_changed_callback");
     Ble* instance = ctx;
 
-    furi_mutex_acquire(instance->ble_lock, FuriWaitForever);
-    furi_semaphore_acquire(instance->mailbox_lock, FuriWaitForever);
-
     if(connected) {
         instance->status = BleServiceStatusConnected;
     } else {
@@ -21,23 +18,13 @@ static void
         instance->status = paired ? BleServiceStatusConnectable : BleServiceStatusAdvertising;
     }
 
-    BleIntercomFrameGeneric* frame = &instance->mailbox;
-    frame->header.frame_type = BleIntercomFrameTypeRequest;
-    frame->header.command = BleCommandSetStatus;
-    frame->header.source = BleIntercomFrameSourceSystem;
-    frame->header.data_size = sizeof(BleState);
-    frame->header.result = true;
-
-    BleState* state = (BleState*)frame->data;
-    state->status = instance->status;
-
-    memcpy(
-        state->remote_device_address, remote_dev_address, BLE_REMOTE_DEVICE_ADDRESS_STRING_SIZE);
+    BleState state = {0};
+    state.status = instance->status,
+    memcpy(state.remote_device_address, remote_dev_address, BLE_REMOTE_ADDRESS_STRING_SIZE);
     memcpy(instance->remote_device_address, remote_dev_address, BLE_REMOTE_ADDRESS_STRING_SIZE);
 
-    ble_command_request_process(frame, instance);
-    furi_semaphore_release(instance->mailbox_lock);
-    furi_mutex_release(instance->ble_lock);
+    ble_command_engine_put_command_no_wait(
+        instance->engine, BleCommandSetStatus, &state, sizeof(BleState));
 }
 
 static void ble_service_init_wait_callback(BleServiceObject* service, bool result, void* ctx) {
@@ -155,6 +142,15 @@ static bool ble_command_get_status_response(BleIntercomFrameGeneric* frame, void
     return true;
 }
 
+static bool ble_command_set_status_request(BleIntercomFrameGeneric* frame, void* context) {
+    BLE_LOG_D("ble_command_set_status_request");
+    Ble* instance = context;
+    frame->header.result = true;
+    bool result = ble_command_request_process(frame, context);
+    ble_command_engine_unblock_with_result(instance->engine, NULL, 0, result);
+    return result;
+}
+
 static bool ble_command_forget_pairing_request(BleIntercomFrameGeneric* frame, void* context) {
     BLE_LOG_D("BleCommandForgetPairing request");
     bool result = ble_worker_forget_pairing();
@@ -200,7 +196,13 @@ const BleCommandItem ble_commands[BleCommandCount] = {
             .request = ble_command_get_status_request,
             .response = ble_command_get_status_response,
         },
-    [BleCommandForgetPairing] = {
-        .request = ble_command_forget_pairing_request,
-        .response = ble_command_forget_pairing_response,
-    }};
+    [BleCommandSetStatus] =
+        {
+            .request = ble_command_set_status_request,
+        },
+    [BleCommandForgetPairing] =
+        {
+            .request = ble_command_forget_pairing_request,
+            .response = ble_command_forget_pairing_response,
+        },
+};
