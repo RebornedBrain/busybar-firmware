@@ -1,35 +1,10 @@
 #include "settings/settings.h"
-#include "ble_command_engine.h"
-#include "ble_system_command.h"
+#include "ble_i.h"
 #include "ble/service/ble_service.h"
 #include "http/ble_http_repeater.h"
 #include "streaming/ble_streaming.h"
 
 #define TAG "BLE_U5"
-
-BleIntercomFrameGeneric*
-    ble_command_extract_frame(Ble* instance, BleCommandEngineExtractFrameSource source) {
-    if(source == BleCommandEngineExtractFrameSourceIntercomBuffer)
-        return &instance->mailbox;
-    else if(source == BleCommandEngineExtractFrameSourceCommandBuffer)
-        return (BleIntercomFrameGeneric*)&instance->current_command->header;
-    else {
-        furi_crash("Unknown source");
-    }
-}
-
-void ble_command_unblock_with_result(Ble* instance, bool result) {
-    if(api_lock_is_locked(instance->current_command_api_lock)) {
-        instance->current_command->header.result = result;
-        api_lock_unlock(instance->current_command_api_lock);
-    }
-
-    const FuriThreadId owner_id = furi_mutex_get_owner(instance->current_command_lock);
-    const FuriThreadId current_id = furi_thread_get_current_id();
-    if(owner_id == current_id) {
-        furi_mutex_release(instance->current_command_lock);
-    }
-}
 
 static void ble_restore_state_on_start(const Ble* instance) {
     BleSettings settings;

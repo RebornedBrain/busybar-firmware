@@ -4,7 +4,8 @@
  */
 #pragma once
 
-#include "ble_i.h"
+#include "ble.h"
+#include "ble_intercom_types.h"
 
 /** 
 * @brief Enumeration of possible ble commands. 
@@ -31,7 +32,7 @@ typedef enum {
  *
  * @param[in] frame Pointer to frame
  * @param[in] context Execution context
- * @param[out] true when handling was fine, otherwise false
+ * @return true when handling was fine, otherwise false
  */
 typedef bool (*BleCommandHandler)(BleIntercomFrameGeneric* frame, void* context);
 
@@ -73,15 +74,6 @@ bool ble_command_response_process(BleIntercomFrameGeneric* frame, void* context)
  * @returns always false
  */
 bool ble_command_deinit_process(BleIntercomFrameGeneric* frame, void* context);
-
-/**
- * @brief Unblocks external thread which has been waiting for ble command to be completed
- *
- * @param[in] instance pointer to the ble instance
- * @param[in] result result if command processing, which will be transferred to public api
- * call and become its return value
- */
-void ble_command_unblock_with_result(Ble* instance, bool result);
 
 /**
  * @brief Array with command handlers. 

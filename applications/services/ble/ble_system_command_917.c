@@ -1,22 +1,10 @@
-#include "ble_command_engine.h"
-#include "ble_system_command.h"
+#include "ble_i.h"
 #include "worker/ble_worker.h"
 #include "worker/ble_worker_util.h"
 
 //#define BLE_DEBUG_PRINT_SERVICE_DATA_AFTER_INIT
 
 #define TAG "BLE_917"
-
-BleIntercomFrameGeneric*
-    ble_command_extract_frame(Ble* instance, BleCommandEngineExtractFrameSource source) {
-    furi_check(source == BleCommandEngineExtractFrameSourceIntercomBuffer);
-    return (BleIntercomFrameGeneric*)&instance->mailbox;
-}
-
-void ble_command_unblock_with_result(Ble* instance, bool result) {
-    UNUSED(instance);
-    UNUSED(result);
-}
 
 static void
     ble_connection_changed_callback(void* ctx, bool connected, const uint8_t* remote_dev_address) {

@@ -1,4 +1,5 @@
 #include "ble_system_command.h"
+#include "ble_i.h"
 
 static bool ble_command_common_process(
     BleIntercomFrameGeneric* frame,
