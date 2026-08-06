@@ -37,10 +37,7 @@ static void
         BLE_LOG_W("Error: %s", furi_string_get_cstr(instance->error));
         instance->status = BleServiceStatusError;
 
-        if(api_lock_is_locked(instance->current_command_api_lock)) {
-            instance->current_command->header.result = false;
-            api_lock_unlock(instance->current_command_api_lock);
-        }
+        ble_command_engine_unblock_with_result(instance->engine, NULL, 0, false);
     } else if(instance->service_post_process_callback) {
         instance->service_post_process_callback(service, result, instance);
     }
@@ -64,7 +61,7 @@ static void ble_custom_event_handler_init(Ble* instance) {
 
     ble_allocate_services(instance);
 #if !defined(BSB_MCU_SI917)
-    furi_event_loop_set_custom_event(instance->event_loop, BleEventTypeInitOnStart);
+    ble_command_engine_put_command_no_wait(instance->engine, BleCommandInit, NULL, 0);
 #endif
 }
 
@@ -91,7 +88,7 @@ static void ble_custom_event_callback(uint32_t events, void* context) {
 
         if(events & BleEventTypeIntercomDeinit) {
             ble_command_engine_unblock_with_result(instance->engine, NULL, 0, false);
-            ble_command_engine_put_command_no_wait(instance->engine, BleCommandDeinit);
+            ble_command_engine_put_command_no_wait(instance->engine, BleCommandDeinit, NULL, 0);
         }
 
         if(events & BleEventTypeFrameReceived) {

@@ -10,7 +10,7 @@ static void ble_restore_state_on_start(const Ble* instance) {
     BleSettings settings;
     ble_settings_load(&settings);
     if(settings.enabled) {
-        furi_event_loop_set_custom_event(instance->event_loop, BleEventTypeEnableOnStart);
+        ble_command_engine_put_command_no_wait(instance->engine, BleCommandEnable, NULL, 0);
     }
 }
 
@@ -38,7 +38,7 @@ static void ble_service_init_wait_callback(BleServiceObject* service, bool resul
         ble_set_service_post_process_callback(instance, NULL);
 
         ble_restore_state_on_start(instance);
-        ble_command_unblock_with_result(instance, true);
+        ble_command_engine_unblock_with_result(instance->engine, NULL, 0, true);
     }
 }
 
@@ -54,10 +54,10 @@ static bool ble_command_init_request(BleIntercomFrameGeneric* frame, void* conte
     } else if(
         state == BleServiceStatusReady || state == BleServiceStatusAdvertising ||
         state == BleServiceStatusConnected || state == BleServiceStatusConnectable) {
-        ble_command_unblock_with_result(instance, true);
+        ble_command_engine_unblock_with_result(instance->engine, NULL, 0, true);
     } else if(state == BleServiceStatusError) {
         BLE_LOG_W("No init, error occurred");
-        ble_command_unblock_with_result(instance, false);
+        ble_command_engine_unblock_with_result(instance->engine, NULL, 0, false);
     }
 
     return result;
@@ -95,10 +95,10 @@ static bool ble_command_enable_request(BleIntercomFrameGeneric* frame, void* con
     } else if(
         state == BleServiceStatusAdvertising || state == BleServiceStatusConnected ||
         state == BleServiceStatusConnectable) {
-        ble_command_unblock_with_result(instance, true);
+        ble_command_engine_unblock_with_result(instance->engine, NULL, 0, true);
     } else if(state == BleServiceStatusError) {
         BLE_LOG_W("No enable, error occurred");
-        ble_command_unblock_with_result(instance, false);
+        ble_command_engine_unblock_with_result(instance->engine, NULL, 0, false);
     }
 
     return result;
@@ -115,7 +115,7 @@ static bool ble_command_enable_response(BleIntercomFrameGeneric* frame, void* co
     }
 
     ble_http_repeater_start(instance);
-    ble_command_unblock_with_result(instance, frame->header.result);
+    ble_command_engine_unblock_with_result(instance->engine, NULL, 0, frame->header.result);
 
     BleState status = {
         .status = instance->status,
@@ -132,7 +132,7 @@ static bool ble_command_disable_request(BleIntercomFrameGeneric* frame, void* co
     bool result = false;
     if(state == BleServiceStatusError) {
         BLE_LOG_W("No disable, error occurred");
-        ble_command_unblock_with_result(instance, result);
+        ble_command_engine_unblock_with_result(instance->engine, NULL, 0, result);
     } else {
         result = ble_command_request_process(frame, context);
     }
@@ -145,14 +145,13 @@ static bool ble_command_disable_response(BleIntercomFrameGeneric* frame, void* c
     BLE_LOG_D("BleCommandDisable response");
     Ble* instance = context;
 
-    instance->current_command->header.result = frame->header.result;
     instance->status = frame->header.result ? BleServiceStatusReady : BleServiceStatusError;
 
     ble_save_enabled_state(false);
 
     ble_http_repeater_stop();
     ble_streaming_update(instance->streaming, instance->status);
-    ble_command_unblock_with_result(instance, frame->header.result);
+    ble_command_engine_unblock_with_result(instance->engine, NULL, 0, frame->header.result);
 
     BleState status = {
         .status = instance->status,
@@ -170,7 +169,7 @@ static bool ble_command_get_status_request(BleIntercomFrameGeneric* frame, void*
     if(state == BleServiceStatusError) {
         BLE_LOG_W("No status, error occurred");
 
-        ble_command_unblock_with_result(instance, result);
+        ble_command_engine_unblock_with_result(instance->engine, NULL, 0, result);
     } else {
         result = ble_command_request_process(frame, context);
     }
@@ -204,8 +203,7 @@ static bool ble_command_get_status_response(BleIntercomFrameGeneric* frame, void
         result = true;
     } while(false);
 
-    memcpy(instance->current_command->data, response, sizeof(BleState));
-    ble_command_unblock_with_result(instance, result);
+    ble_command_engine_unblock_with_result(instance->engine, response, sizeof(BleState), result);
     return true;
 }
 
@@ -260,7 +258,7 @@ static bool ble_command_forget_pairing_response(BleIntercomFrameGeneric* frame, 
     BLE_LOG_D("BleCommandForgetPairing response");
     Ble* instance = context;
 
-    ble_command_unblock_with_result(instance, frame->header.result);
+    ble_command_engine_unblock_with_result(instance->engine, NULL, 0, frame->header.result);
     return true;
 }
 
