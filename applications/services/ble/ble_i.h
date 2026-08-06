@@ -10,15 +10,7 @@
 #include <furi.h>
 
 #if !defined(BSB_MCU_SI917)
-
 #include "streaming/ble_streaming.h"
-#include <api_lock.h>
-
-typedef struct {
-    BleIntercomFrameHeader header;
-    uint8_t data[];
-} BleCommand;
-
 #else
 #include "worker/ble_worker.h"
 #endif
