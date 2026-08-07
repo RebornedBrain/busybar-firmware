@@ -34,7 +34,8 @@ bool ble_forget(Ble* ble) {
         BleState state = {0};
         if(!ble_get_state(ble, &state)) break;
 
-        if(state.status != BleServiceStatusError && state.status != BleServiceStatusReset) {
+        if(state.status == BleServiceStatusConnectable ||
+           state.status == BleServiceStatusConnected) {
             result = ble_command_engine_put_command(ble->engine, BleCommandForgetPairing, NULL, 0);
         }
     } while(false);
