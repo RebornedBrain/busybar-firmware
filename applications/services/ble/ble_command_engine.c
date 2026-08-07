@@ -53,6 +53,7 @@ static void ble_command_convert_to_intercom_frame(
     frame->header.frame_type = BleIntercomFrameTypeRequest;
     frame->header.source = BleIntercomFrameSourceSystem;
     frame->header.data_size = command->data_size;
+    frame->header.result = command->result;
 
     if(command->data_size > 0) {
         memcpy(frame->data, command->data, command->data_size);
@@ -70,9 +71,12 @@ static void ble_command_engine_queue_handler(FuriEventLoopObject* object, void* 
 
         ble_command_convert_to_intercom_frame(instance, command);
         instance->current_command = command;
-        ble_command_engine_run(instance, (BleIntercomFrameGeneric*)instance->frame);
+
+        if(!ble_command_engine_run(instance, (BleIntercomFrameGeneric*)instance->frame)) {
+            ble_command_engine_unblock_with_result(instance, NULL, 0, false);
+        }
     } else {
-        BLE_LOG_W("Command lock failed");
+        BLE_LOG_D("Command lock failed");
     }
 }
 
@@ -84,6 +88,7 @@ static BleCommand*
     command->internal = !sync;
     command->result = false;
     command->data_size = data_size;
+    command->data = NULL;
     command->lock = sync ? api_lock_alloc_locked() : NULL;
     if(data_size > 0 && data != NULL) {
         command->data = malloc(data_size);
@@ -117,6 +122,8 @@ BleCommandEngine* ble_command_engine_alloc(
     instance->current_command_lock = furi_mutex_alloc(FuriMutexTypeNormal);
     instance->current_command = NULL;
     instance->command_queue = furi_message_queue_alloc(10, sizeof(BleCommand*));
+    instance->frame_size = 0;
+    instance->frame = NULL;
 
     furi_event_loop_subscribe_message_queue(
         event_loop,
@@ -182,12 +189,15 @@ bool ble_command_engine_put_command(
 
     bool result = command->result;
 
-    if(data_size == command->data_size) {
-        memcpy(data, command->data, command->data_size);
-    } else {
-        BLE_LOG_W("Buffer size not equal to data size");
-        result = false;
+    if(data_size > 0) {
+        if(data_size == command->data_size) {
+            memcpy(data, command->data, command->data_size);
+        } else {
+            BLE_LOG_W("Buffer size not equal to data size");
+            result = false;
+        }
     }
+
     ble_command_free(command);
     return result;
 }
@@ -206,8 +216,13 @@ void ble_command_engine_unblock_with_result(
     }
 
     instance->current_command->result = result;
-    if(data_size == instance->current_command->data_size) {
-        memcpy(instance->current_command->data, data, data_size);
+    if(data_size > 0) {
+        if(data_size == instance->current_command->data_size) {
+            memcpy(instance->current_command->data, data, data_size);
+        } else {
+            BLE_LOG_W("Buffer size not equal to data size!!!");
+            instance->current_command->result = false;
+        }
     }
 
     if(instance->current_command->internal) {
