@@ -11,17 +11,14 @@ static void
     BLE_LOG_D("ble_connection_changed_callback");
     Ble* instance = ctx;
 
+    BleState state = {0};
     if(connected) {
-        instance->status = BleServiceStatusConnected;
+        state.status = BleServiceStatusConnected;
+        memcpy(state.remote_device_address, remote_dev_address, BLE_REMOTE_ADDRESS_STRING_SIZE);
     } else {
         const bool paired = ble_worker_pairing_exists();
-        instance->status = paired ? BleServiceStatusConnectable : BleServiceStatusAdvertising;
+        state.status = paired ? BleServiceStatusConnectable : BleServiceStatusAdvertising;
     }
-
-    BleState state = {0};
-    state.status = instance->status,
-    memcpy(state.remote_device_address, remote_dev_address, BLE_REMOTE_ADDRESS_STRING_SIZE);
-    memcpy(instance->remote_device_address, remote_dev_address, BLE_REMOTE_ADDRESS_STRING_SIZE);
 
     ble_command_engine_put_command_no_wait(
         instance->engine, BleCommandSetStatus, &state, sizeof(BleState));
@@ -146,6 +143,14 @@ static bool ble_command_set_status_request(BleIntercomFrameGeneric* frame, void*
     BLE_LOG_D("ble_command_set_status_request");
     Ble* instance = context;
     frame->header.result = true;
+
+    BleState* state = (BleState*)frame->data;
+    instance->status = state->status;
+    memcpy(
+        instance->remote_device_address,
+        state->remote_device_address,
+        BLE_REMOTE_ADDRESS_STRING_SIZE);
+
     bool result = ble_command_request_process(frame, context);
     ble_command_engine_unblock_with_result(instance->engine, NULL, 0, result);
     return result;
