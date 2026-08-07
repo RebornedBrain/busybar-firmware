@@ -298,7 +298,7 @@ bool ble_device_forget_paired(BleDevice* instance) {
         return false;
     }
 
-    if(prev_state == BleDeviceStateAdvertising) {
+    if(prev_state == BleDeviceStateAdvertising || prev_state == BleDeviceStateForgetting) {
         ble_device_stop_advertise(instance);
     }
 
@@ -306,12 +306,8 @@ bool ble_device_forget_paired(BleDevice* instance) {
 
     bool result = ble_security_delete_data(instance->security_data);
 
-    if(prev_state == BleDeviceStateAdvertising) {
+    if(prev_state == BleDeviceStateAdvertising || prev_state == BleDeviceStateForgetting) {
         ble_device_start_advertise(instance);
-    }
-
-    if(instance->state == BleDeviceStateForgetting) {
-        instance->state = BleDeviceStateIdle;
     }
 
     if(result) BLE_LOG_I("Security data removed");
