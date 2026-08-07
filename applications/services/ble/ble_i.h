@@ -25,8 +25,9 @@ typedef struct {
 
 typedef enum {
     BleEventTypeFrameReceived = (1 << 0),
-    BleEventTypeIntercomInit = (1 << 1),
-    BleEventTypeIntercomDeinit = (1 << 2),
+    BleEventTypeFrameLost = (1 << 1),
+    BleEventTypeIntercomInit = (1 << 2),
+    BleEventTypeIntercomDeinit = (1 << 3),
 } BleEventType;
 
 typedef void (

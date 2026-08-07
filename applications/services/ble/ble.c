@@ -96,6 +96,11 @@ static void ble_custom_event_callback(uint32_t events, void* context) {
             furi_semaphore_release(instance->mailbox_lock);
         }
 
+        if(events & BleEventTypeFrameLost) {
+            ble_command_engine_unblock_with_result(instance->engine, NULL, 0, false);
+            furi_semaphore_release(instance->mailbox_lock);
+        }
+
         furi_mutex_release(instance->ble_lock);
     } else
         BLE_LOG_W("Unable to lock BLE");
@@ -115,8 +120,10 @@ static void ble_backend_intercom_rx_callback(const void* data, size_t data_size,
            FuriStatusOk) {
             memcpy(&instance->mailbox, data, data_size);
             furi_event_loop_set_custom_event(instance->event_loop, BleEventTypeFrameReceived);
-        } else
+        } else {
             BLE_LOG_W("Packet lost!");
+            furi_event_loop_set_custom_event(instance->event_loop, BleEventTypeFrameLost);
+        }
     } else {
         BleServiceObject* service = instance->services[frame->header.service_index];
         ble_service_process_mailbox(service, frame);
