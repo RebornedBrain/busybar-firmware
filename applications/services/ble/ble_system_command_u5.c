@@ -90,15 +90,13 @@ static bool ble_command_enable_request(BleIntercomFrameGeneric* frame, void* con
     const BleServiceStatus state = instance->status;
 
     bool result = false;
-    if(state == BleServiceStatusReady) {
-        result = ble_command_request_process(frame, context);
-    } else if(
-        state == BleServiceStatusAdvertising || state == BleServiceStatusConnected ||
-        state == BleServiceStatusConnectable) {
-        ble_command_engine_unblock_with_result(instance->engine, NULL, 0, true);
-    } else if(state == BleServiceStatusError) {
+    if(state == BleServiceStatusError) {
         BLE_LOG_W("No enable, error occurred");
         ble_command_engine_unblock_with_result(instance->engine, NULL, 0, false);
+    } else if(state == BleServiceStatusConnected) {
+        ble_command_engine_unblock_with_result(instance->engine, NULL, 0, true);
+    } else {
+        result = ble_command_request_process(frame, context);
     }
 
     return result;
