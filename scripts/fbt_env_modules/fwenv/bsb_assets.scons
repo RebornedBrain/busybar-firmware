@@ -27,7 +27,7 @@ def strip_pem_comments(path):
                 out_lines.append(line)
     while out_lines and out_lines[-1] == "":
         out_lines.pop()
-    with open(path, "w") as f:
+    with open(path, "w", newline='\n') as f:
         f.write("\n".join(out_lines) + "\n")
 
 
