@@ -96,7 +96,7 @@ jobs:
 
       - name: "Set update URL output"
         id: set-url
-        if: ${{ steps.build-fw.outcome == 'success' }}
+        if: ${{ !github.event.pull_request.head.repo.fork && steps.build-fw.outcome == 'success' }}
         run: |
           BRANCH="${{ steps.names.outputs.branch_name }}"
           SUFFIX="${{ steps.names.outputs.suffix }}"

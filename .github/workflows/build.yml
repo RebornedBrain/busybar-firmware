@@ -162,7 +162,7 @@ jobs:
 
       - name: 'Set update URL output for default target'
         id: set-url
-        if: ${{ matrix.target_spec == env.DEFAULT_TARGET_SPEC }}
+        if: ${{ !github.event.pull_request.head.repo.fork && matrix.target_spec == env.DEFAULT_TARGET_SPEC }}
         run: |
           echo "update_url=${{ steps.names.outputs.branch_name }}/busybar-f${{ steps.build-fw.outputs.u5_target_hw }}-update-${{ steps.names.outputs.suffix }}.tgz" >> "$GITHUB_OUTPUT"
           echo "target=${{ steps.build-fw.outputs.u5_target_hw }}" >> "$GITHUB_OUTPUT"
@@ -226,6 +226,8 @@ jobs:
           regression="${{ needs.regression-tests.result }}"
           if [[ "$smoke" == "success" || "$regression" == "success" ]]; then
             echo "Tests passed (smoke: $smoke, regression: $regression)"
+          elif [[ "${{ github.event.pull_request.head.repo.fork }}" == "true" ]]; then
+            echo "External PR: test suites skipped (no build artifacts on the build server). OK."
           else
             echo "No test suite succeeded. smoke=$smoke, regression=$regression" >&2
             exit 1
