@@ -271,17 +271,21 @@ jobs:
   # context instead of the individual test checks (whose contexts change name
   # between "ran" and "skipped", and which never run on fork PRs).
   #
-  # Skipped on fork PRs on purpose: external PRs cannot upload artifacts, so
-  # every test job above is skipped by its own `if:` condition; a skipped
-  # required check is treated as passing by GitHub.
+  # Runs on fork PRs too and passes without requiring any suite, because on
+  # fork PRs every test job above is skipped by its own `if:` condition (no
+  # artifacts can be uploaded) - the gate stays green instead of skipped.
   tests-passed:
     needs: [build, updater-tests, integration-tests, regression-tests, unit-tests, brick-tests]
-    if: always() && !github.event.pull_request.head.repo.fork
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: 'Check that required test suites passed'
         run: |
           set -euo pipefail
+          if [[ "${{ github.event.pull_request.head.repo.fork }}" == "true" ]]; then
+            echo "External PR: test suites skipped (no build artifacts on the build server). OK."
+            exit 0
+          fi
           run_regression="${{ needs.build.outputs.run_regression }}"
           is_rc="${{ github.ref_type == 'tag' && contains(github.ref_name, '-rc') }}"
           force_regression="$([[ "$run_regression" == "true" || "$is_rc" == "true" ]] && echo true || echo false)"
