@@ -61,7 +61,7 @@ void device_name_get(DeviceName* instance, FuriString* name);
  * @param[in] name New device name to set
  * @return DeviceNameErrorNone on success, error otherwise
  */
-DeviceNameError device_name_set(DeviceName* instance, const FuriString* name);
+DeviceNameError device_name_set(DeviceName* instance, const char* name);
 
 /**
  * @brief Get the DeviceName state object.

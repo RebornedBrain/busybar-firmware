@@ -36,7 +36,7 @@ typedef struct {
 } DeviceNameMessageGetName;
 
 typedef struct {
-    const FuriString* name;
+    const char* name;
     DeviceNameError* error;
 } DeviceNameMessageSetName;
 

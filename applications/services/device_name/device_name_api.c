@@ -16,7 +16,7 @@ void device_name_get(DeviceName* instance, FuriString* name) {
     furi_string_set(name, state.name);
 }
 
-DeviceNameError device_name_set(DeviceName* instance, const FuriString* name) {
+DeviceNameError device_name_set(DeviceName* instance, const char* name) {
     furi_check(instance);
     furi_check(name);
 

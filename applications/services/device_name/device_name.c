@@ -80,7 +80,7 @@ static void device_name_set_handler(DeviceName* instance, const DeviceNameMessag
     DeviceNameError error;
 
     do {
-        const char* new_name = furi_string_get_cstr(set_name_message->name);
+        const char* new_name = set_name_message->name;
 
         error = device_name_validate(new_name);
         if(error != DeviceNameErrorNone) {
