@@ -162,19 +162,17 @@ static void
  * - Discovery: unlocked
  * - lwIP: unlocked
  */
-static void discovery_device_name_event(const void* message, void* context) {
-    furi_assert(message);
+static void discovery_device_name_state_callback(const void* item, void* context) {
+    furi_assert(item);
     furi_assert(context);
 
-    const DeviceNameEvent* event = message;
+    const DeviceNameState* state = item;
     Discovery* discovery = context;
-
-    if(event->type != DeviceNameEventTypeNameChanged) return;
 
     discovery_lock(discovery);
 
     FuriString* hostname_furi = furi_string_alloc();
-    const char* dev_name = event->name_changed.name;
+    const char* dev_name = state->name;
     const char* hostname = discovery_device_name_to_hostname(dev_name, hostname_furi);
 
     LOCK_TCPIP_CORE();
@@ -317,8 +315,11 @@ static Discovery* discovery_alloc(void) {
     DiscoveryServices_init(discovery->services);
 
     discovery->device_name = furi_record_open(RECORD_DEVICE_NAME);
-    furi_pubsub_subscribe(
-        device_name_get_pubsub(discovery->device_name), discovery_device_name_event, discovery);
+    furi_state_get_subscribe(
+        device_name_get_state(discovery->device_name),
+        NULL,
+        discovery_device_name_state_callback,
+        discovery);
 
     discovery_subscribe_to_network_drivers(discovery);
 
