@@ -35,11 +35,6 @@ DeviceNameError device_name_set(DeviceName* instance, const FuriString* name) {
     return error;
 }
 
-FuriPubSub* device_name_get_pubsub(DeviceName* instance) {
-    furi_check(instance);
-    return instance->pubsub;
-}
-
 FuriState* device_name_get_state(const DeviceName* instance) {
     furi_check(instance);
     return instance->state;

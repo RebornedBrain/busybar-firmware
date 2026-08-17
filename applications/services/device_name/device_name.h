@@ -14,8 +14,6 @@
 
 #include <core/string.h>
 #include <core/state.h>
-// TODO: Remove
-#include <core/pubsub.h>
 
 #include "device_name_common.h"
 
@@ -46,24 +44,6 @@ typedef enum {
 } DeviceNameError;
 
 /**
- * @brief Device name event type (published via FuriPubSub on rename)
- */
-typedef enum {
-    DeviceNameEventTypeNameChanged,
-} DeviceNameEventType;
-
-typedef struct {
-    const char* name;
-} DeviceNameEventNameChanged;
-
-typedef struct {
-    DeviceNameEventType type;
-    union {
-        DeviceNameEventNameChanged name_changed;
-    };
-} DeviceNameEvent;
-
-/**
  * @brief Get current device name
  *
  * @param[in] instance Device name service instance
@@ -82,17 +62,6 @@ void device_name_get(DeviceName* instance, FuriString* name);
  * @return DeviceNameErrorNone on success, error otherwise
  */
 DeviceNameError device_name_set(DeviceName* instance, const FuriString* name);
-
-/**
- * @brief Get PubSub instance which indicates that name was changed
-
- * Use furi_pubsub_subscribe() to subscribe to the Device Name service events.
- * The delivered events will be of type DeviceNameEvent.
- *
- * @param[in] instance Device name service instance
- * @returns pubsub instance available for subscription
- */
-FuriPubSub* device_name_get_pubsub(DeviceName* instance);
 
 /**
  * @brief Get the DeviceName state object.
