@@ -3,6 +3,8 @@
 #include <cjson/cJSON.h>
 #include <device_info/device_info.h>
 
+#include "settings/device_name_settings.h"
+
 #define DEVICE_NAME_MQTT_PREFIX "state"
 #define DEVICE_NAME_KEY         "name"
 
@@ -47,25 +49,27 @@ DeviceNameError device_name_validate(const char* name) {
     return DeviceNameErrorNone;
 }
 
-static void device_name_publish_mqtt_message(DeviceName* instance) {
+static char* device_name_build_mqtt_message(const DeviceName* instance) {
+    DeviceNameState state;
+    furi_state_get(instance->state, &state);
+
     cJSON* json = cJSON_CreateObject();
-    cJSON_AddStringToObject(json, "name", instance->settings.name);
+    cJSON_AddStringToObject(json, "name", state.name);
+
     char* json_text = cJSON_PrintUnformatted(json);
     furi_check(json_text);
 
     cJSON_Delete(json);
+    return json_text;
+}
+
+static void device_name_publish_mqtt_message(DeviceName* instance) {
+    char* json_text = device_name_build_mqtt_message(instance);
 
     mqtt_publish(
         instance->mqtt, MqttQosAtLeastOnce, DEVICE_NAME_MQTT_PREFIX, json_text, strlen(json_text));
-    free(json_text);
-}
 
-static void device_name_publish_pubsub_event(DeviceName* instance) {
-    DeviceNameEvent event = {
-        .type = DeviceNameEventTypeNameChanged,
-        .name_changed.name = instance->settings.name,
-    };
-    furi_pubsub_publish(instance->pubsub, &event);
+    free(json_text);
 }
 
 static void device_name_set_handler(DeviceName* instance, const DeviceNameMessage* message) {
@@ -73,26 +77,31 @@ static void device_name_set_handler(DeviceName* instance, const DeviceNameMessag
     furi_assert(set_name_message->name);
     furi_assert(set_name_message->error);
 
-    DeviceNameError error = DeviceNameErrorNone;
+    DeviceNameError error;
 
     do {
-        error = device_name_validate(furi_string_get_cstr(set_name_message->name));
-        if(error != DeviceNameErrorNone) break;
+        const char* new_name = furi_string_get_cstr(set_name_message->name);
 
-        snprintf(
-            instance->settings.name,
-            sizeof(instance->settings.name),
-            furi_string_get_cstr(set_name_message->name));
+        error = device_name_validate(new_name);
+        if(error != DeviceNameErrorNone) {
+            break;
+        }
 
-        if(!device_name_settings_save(&instance->settings)) {
+        DeviceNameSettings settings;
+        strlcpy(settings.name, new_name, sizeof(settings.name));
+
+        if(!device_name_settings_save(&settings)) {
             error = DeviceNameErrorSaveFailed;
             break;
         }
-        FURI_LOG_I(TAG, "New name: %s", furi_string_get_cstr(set_name_message->name));
+
+        FURI_LOG_I(TAG, "New name: %s", new_name);
+
+        with_furi_state(instance->state, DeviceNameState * state, {
+            strlcpy(state->name, new_name, sizeof(state->name));
+        });
 
         device_name_publish_mqtt_message(instance);
-
-        device_name_publish_pubsub_event(instance);
 
     } while(false);
 
@@ -106,12 +115,7 @@ static void
     device_name_publish_mqtt_message(instance);
 }
 
-static void device_name_get_handler(DeviceName* instance, const DeviceNameMessage* message) {
-    furi_string_set_str(message->data.get_name.name, instance->settings.name);
-}
-
 static const DeviceNameMessageHandler device_name_handlers[DeviceNameMessageTypeMax] = {
-    [DeviceNameMessageTypeGetName] = device_name_get_handler,
     [DeviceNameMessageTypeSetName] = device_name_set_handler,
     [DeviceNameMessageTypeMqttPublish] = device_name_publish_name_handler,
 };
@@ -165,15 +169,26 @@ static void device_name_adapter_for_device_info(
     furi_string_free(dev_name);
 }
 
+static void device_name_load_settings(DeviceName* instance) {
+    DeviceNameSettings settings;
+    device_name_settings_load(&settings);
+
+    with_furi_state(instance->state, DeviceNameState * state, {
+        strlcpy(state->name, settings.name, sizeof(state->name));
+    });
+
+    FURI_LOG_I(TAG, "Device name: %s", settings.name);
+}
+
 static DeviceName* device_name_alloc(void) {
     DeviceName* instance = malloc(sizeof(DeviceName));
 
     instance->event_loop = furi_event_loop_alloc();
     instance->queue = furi_message_queue_alloc(1, sizeof(DeviceNameMessage));
+    instance->state = furi_state_alloc(sizeof(DeviceNameState));
     instance->pubsub = furi_pubsub_alloc();
 
-    device_name_settings_load(&instance->settings);
-    FURI_LOG_I(TAG, "Device name: %s", instance->settings.name);
+    device_name_load_settings(instance);
 
     furi_event_loop_subscribe_message_queue(
         instance->event_loop,

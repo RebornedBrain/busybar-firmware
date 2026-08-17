@@ -12,7 +12,10 @@
  */
 #pragma once
 
-#include <furi.h>
+#include <core/string.h>
+#include <core/state.h>
+// TODO: Remove
+#include <core/pubsub.h>
 
 #include "device_name_common.h"
 
@@ -90,6 +93,16 @@ DeviceNameError device_name_set(DeviceName* instance, const FuriString* name);
  * @returns pubsub instance available for subscription
  */
 FuriPubSub* device_name_get_pubsub(DeviceName* instance);
+
+/**
+ * @brief Get the DeviceName state object.
+ *
+ * The return value will be of @ref DeviceState underlying type.
+ *
+ * @param[in] instance Device name service instance
+ * @returns pointer to the state object
+ */
+FuriState* device_name_get_state(const DeviceName* instance);
 
 #ifdef __cplusplus
 }

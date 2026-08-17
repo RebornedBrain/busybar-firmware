@@ -14,21 +14,18 @@ extern "C" {
 #include <mqtt/mqtt.h>
 #include <toolbox/api_lock.h>
 
-#include "settings/device_name_settings.h"
-
 #define TAG "DeviceName"
 
 struct DeviceName {
     FuriEventLoop* event_loop;
     FuriMessageQueue* queue;
+    FuriState* state;
     FuriPubSub* pubsub;
-    DeviceNameSettings settings;
     Mqtt* mqtt;
     FuriPubSub* mqtt_events_pubsub;
 };
 
 typedef enum {
-    DeviceNameMessageTypeGetName,
     DeviceNameMessageTypeSetName,
     DeviceNameMessageTypeMqttPublish,
     DeviceNameMessageTypeMax,

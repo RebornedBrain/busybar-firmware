@@ -3,3 +3,7 @@
 #define DEVICE_NAME_DEFAULT    "BUSY Bar"
 #define DEVICE_NAME_MAX_LENGTH (20U)
 #define DEVICE_NAME_MAX_SIZE   (DEVICE_NAME_MAX_LENGTH + 1U)
+
+typedef struct {
+    char name[DEVICE_NAME_MAX_SIZE];
+} DeviceNameState;
