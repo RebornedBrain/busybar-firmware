@@ -29,15 +29,19 @@ def download_cacert_sha(url):
         return expected_sha_raw.text.split(" ")[0]
     return None
 
-def download_cacert(url, target_path):
+def download_cacert(url, target_path, expected_sha):
     payload = download_data(url)
-    if payload != None:
-        with open(target_path, "wb") as f:
-            f.write(payload.content)                  
-        return True 
-    else:
+    if payload == None:
         return False
-    
+        
+    new_sha = hashlib.sha256(payload.content).hexdigest()        
+    if(new_sha != expected_sha):
+        print(g.brightyellow("Downloaded payload hash differs from expected"))                 
+        return False
+            
+    with open(target_path, "wb") as f:
+        f.write(payload.content)
+    return True    
 
 def update_cacert(target, source, env):
     """Update current cacert file from remote url."""
@@ -58,14 +62,15 @@ def update_cacert(target, source, env):
             print(fg.green(f"File {target_path} is up to date"))
         else:
             print(f"Cacert hash different, downloading new")
-            if download_cacert(SRC_URL, target_path):
+            if download_cacert(SRC_URL, target_path, expected_sha):
                 print(fg.green(f"ATTENTION: {target_path} has been updated from {SRC_URL}. Commit the change."))
             else:
                 print(fg.brightyellow(f"Failed to download, use current {target_path} file"))    
    
     else:
         print(f"Cacert file is missing, downloading new")
-        if download_cacert(SRC_URL, target_path):
+        expected_sha = download_cacert_sha(SRC_URL_SHA256)
+        if (expected_sha!=None) and (download_cacert(SRC_URL, target_path, expected_sha)):
             print(fg.green(f"ATTENTION: {target_path} has been updated from {SRC_URL}. Commit the change."))
         else:
             print(fg.brightyellow(f"Failed to download cert and no local copy found at {target_path}"))
