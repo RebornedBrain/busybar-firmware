@@ -11,4 +11,4 @@ target_file = fw_assets_env.File(target_path+target_name)
 fw_assets_env.Precious(target_file)
 file = fw_assets_env.UpdateCerts(target=target_file, source=[])
 
-Alias("update_cacerts", file)
+Alias("update_cacert", file)
