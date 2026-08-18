@@ -1,4 +1,5 @@
 from SCons.Builder import Builder
+from SCons.Errors import StopError
 
 from ansi.color import fg
 
@@ -73,8 +74,7 @@ def update_cacert(target, source, env):
         if (expected_sha!=None) and (download_cacert(SRC_URL, target_path, expected_sha)):
             print(fg.green(f"ATTENTION: {target_path} has been updated from {SRC_URL}. Commit the change."))
         else:
-            print(fg.brightyellow(f"Failed to download cert and no local copy found at {target_path}"))
-            exit(1)
+            raise StopError(f"Failed to download cert and no local copy found")
 
 
 def strip_pem_comments(target, source, env):
