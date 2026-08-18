@@ -50,7 +50,7 @@ def update_cacert(target, source, env):
     if os.path.exists(target_path):
         current_sha = sha256sum(target_path)
         expected_sha = download_cacert_sha(SRC_URL_SHA256)
-        print(f"Cert file exists compare hash\ncurernt_sha: {current_sha}\nexpected_sha: {expected_sha}")
+        print(f"Cert file exists compare hash\ncurrent_sha: {current_sha}\nexpected_sha: {expected_sha}")
 
         if(expected_sha == None):
             print(fg.brightyellow(f"Failed to load new hash from {SRC_URL_SHA256}, use current {target_path} file"))    
