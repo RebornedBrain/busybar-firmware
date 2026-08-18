@@ -36,7 +36,7 @@ def download_cacert(url, target_path, expected_sha):
         
     new_sha = hashlib.sha256(payload.content).hexdigest()        
     if(new_sha != expected_sha):
-        print(g.brightyellow("Downloaded payload hash differs from expected"))                 
+        print(fg.brightyellow("Downloaded payload hash differs from expected"))                 
         return False
             
     with open(target_path, "wb") as f:
