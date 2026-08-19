@@ -20,7 +20,6 @@ struct DeviceName {
     FuriEventLoop* event_loop;
     FuriMessageQueue* queue;
     FuriState* state;
-    FuriPubSub* pubsub;
     Mqtt* mqtt;
     FuriPubSub* mqtt_events_pubsub;
 };

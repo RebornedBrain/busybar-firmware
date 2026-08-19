@@ -186,7 +186,6 @@ static DeviceName* device_name_alloc(void) {
     instance->event_loop = furi_event_loop_alloc();
     instance->queue = furi_message_queue_alloc(1, sizeof(DeviceNameMessage));
     instance->state = furi_state_alloc(sizeof(DeviceNameState));
-    instance->pubsub = furi_pubsub_alloc();
 
     device_name_load_settings(instance);
 
