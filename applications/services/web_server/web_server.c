@@ -555,7 +555,7 @@ static void web_srv_discovery_init(WebServer* server) {
         .name = "httpd",
         .service = "_http",
         .txt_callback = web_srv_discovery_txt,
-        .transport = DiscoveryTransportTcp,
+        .transport_type = DiscoveryTransportTypeTcp,
         .port = 80,
     };
     discovery_add_service(discovery, &discovery_info, &srv);

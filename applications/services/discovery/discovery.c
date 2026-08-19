@@ -70,10 +70,10 @@ static void discovery_unlock(Discovery* discovery) {
 /**
  * No context requirements
  */
-static enum mdns_sd_proto discovery_transport_to_lwip(DiscoveryTransport transport) {
-    if(transport == DiscoveryTransportTcp) {
+static enum mdns_sd_proto discovery_transport_to_lwip(DiscoveryTransportType transport) {
+    if(transport == DiscoveryTransportTypeTcp) {
         return DNSSD_PROTO_TCP;
-    } else if(transport == DiscoveryTransportUdp) {
+    } else if(transport == DiscoveryTransportTypeUdp) {
         return DNSSD_PROTO_UDP;
     } else {
         furi_crash();
@@ -141,7 +141,7 @@ static void
         interface->netif,
         info->name,
         info->service,
-        discovery_transport_to_lwip(info->transport),
+        discovery_transport_to_lwip(info->transport_type),
         info->port,
         discovery_txt_adapter,
         service);
@@ -325,7 +325,7 @@ static Discovery* discovery_alloc(void) {
         .name = discovery->device_service_name,
         .service = "_busybar",
         .txt_callback = discovery_busybar_txt,
-        .transport = DiscoveryTransportTcp,
+        .transport_type = DiscoveryTransportTypeTcp,
         .port = 0,
     };
     discovery_add_service(discovery, &discovery->device_discovery, discovery);

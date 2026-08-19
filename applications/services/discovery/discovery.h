@@ -17,15 +17,15 @@ typedef struct Discovery Discovery;
 typedef void (*DiscoveryTxtCallback)(FuriString* txt_out, void* context);
 
 typedef enum {
-    DiscoveryTransportTcp,
-    DiscoveryTransportUdp,
-} DiscoveryTransport;
+    DiscoveryTransportTypeTcp,
+    DiscoveryTransportTypeUdp,
+} DiscoveryTransportType;
 
 typedef struct {
     const char* name;
     const char* service;
     DiscoveryTxtCallback txt_callback;
-    DiscoveryTransport transport;
+    DiscoveryTransportType transport_type;
     uint16_t port;
 } DiscoveryServiceInfo;
 
