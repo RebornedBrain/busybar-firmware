@@ -21,7 +21,6 @@ struct DeviceName {
     FuriMessageQueue* queue;
     FuriState* state;
     Mqtt* mqtt;
-    FuriPubSub* mqtt_events_pubsub;
 };
 
 typedef enum {
@@ -31,16 +30,11 @@ typedef enum {
 } DeviceNameMessageType;
 
 typedef struct {
-    FuriString* name;
-} DeviceNameMessageGetName;
-
-typedef struct {
     const char* name;
     DeviceNameError* error;
 } DeviceNameMessageSetName;
 
 typedef union {
-    DeviceNameMessageGetName get_name;
     DeviceNameMessageSetName set_name;
 } DeviceNameMessageData;
 

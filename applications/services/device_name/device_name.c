@@ -197,9 +197,8 @@ static DeviceName* device_name_alloc(void) {
         instance);
 
     instance->mqtt = furi_record_open(RECORD_MQTT);
-    instance->mqtt_events_pubsub = mqtt_get_pubsub(instance->mqtt);
     furi_pubsub_subscribe(
-        instance->mqtt_events_pubsub, device_name_mqtt_events_pubsub_callback, instance);
+        mqtt_get_pubsub(instance->mqtt), device_name_mqtt_events_pubsub_callback, instance);
 
     DeviceInfo* dev_info = furi_record_open(RECORD_DEVICE_INFO);
     device_info_register_segment(dev_info, device_name_adapter_for_device_info, instance);
