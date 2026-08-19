@@ -197,6 +197,7 @@ static void discovery_netif_up(Discovery* discovery, NetworkNetif netif_id) {
 
         FuriString* hostname_furi = furi_string_alloc();
         FuriString* dev_name = furi_string_alloc();
+        // TODO: No get()s on my watch!
         device_name_get(discovery->device_name, dev_name);
         const char* hostname =
             discovery_device_name_to_hostname(furi_string_get_cstr(dev_name), hostname_furi);
@@ -327,7 +328,7 @@ static void discovery_api_message_queue_callback(FuriEventLoopObject* object, vo
 // Network driver adapters
 // =======================
 
-static void discovery_wifi_event(const void* item, void* context) {
+static void discovery_wifi_state_callback(const void* item, void* context) {
     furi_assert(item);
     furi_assert(context);
     const WifiInfo* info = item;
@@ -341,7 +342,7 @@ static void discovery_wifi_event(const void* item, void* context) {
     discovery_send_api_message(discovery, &api_message);
 }
 
-static void discovery_usb_network_event(const void* item, void* context) {
+static void discovery_usb_network_state_callback(const void* item, void* context) {
     furi_assert(item);
     furi_assert(context);
     const UsbNetworkInfo* info = item;
@@ -355,15 +356,25 @@ static void discovery_usb_network_event(const void* item, void* context) {
     discovery_send_api_message(discovery, &api_message);
 }
 
-static void discovery_subscribe_to_network_drivers(Discovery* discovery) {
+static void discovery_init_mdns(Discovery* discovery) {
+    UNUSED(discovery);
+
+    furi_record_open(RECORD_NETWORK);
+
+    LOCK_TCPIP_CORE();
+    mdns_resp_init();
+    UNLOCK_TCPIP_CORE();
+}
+
+static void discovery_subscribe_to_network_state(Discovery* discovery) {
     furi_assert(discovery);
 
     discovery->wifi = furi_record_open(RECORD_WIFI);
-    discovery->usb_network = furi_record_open(RECORD_USB_NETWORK);
+    furi_state_subscribe(wifi_get_state(discovery->wifi), discovery_wifi_state_callback, discovery);
 
-    furi_state_subscribe(wifi_get_state(discovery->wifi), discovery_wifi_event, discovery);
+    discovery->usb_network = furi_record_open(RECORD_USB_NETWORK);
     furi_state_subscribe(
-        usb_network_get_state(discovery->usb_network), discovery_usb_network_event, discovery);
+        usb_network_get_state(discovery->usb_network), discovery_usb_network_state_callback, discovery);
 }
 
 static void discovery_busybar_txt(FuriString* txt_out, void* context) {
@@ -406,12 +417,6 @@ static Discovery* discovery_alloc(void) {
     DiscoveryServices_init(discovery->services);
     discovery->device_name = furi_record_open(RECORD_DEVICE_NAME);
 
-    furi_record_open(RECORD_NETWORK);
-
-    LOCK_TCPIP_CORE();
-    mdns_resp_init();
-    UNLOCK_TCPIP_CORE();
-
     furi_event_loop_subscribe_message_queue(
         discovery->event_loop,
         discovery->api_queue,
@@ -419,14 +424,14 @@ static Discovery* discovery_alloc(void) {
         discovery_api_message_queue_callback,
         discovery);
 
-    furi_state_get_subscribe(
+    furi_state_subscribe(
         device_name_get_state(discovery->device_name),
-        NULL,
         discovery_device_name_state_callback,
         discovery);
 
-    discovery_subscribe_to_network_drivers(discovery);
+    discovery_init_mdns(discovery);
     discovery_add_busybar_service(discovery);
+    discovery_subscribe_to_network_state(discovery);
 
     furi_record_create(RECORD_DISCOVERY, discovery);
 
