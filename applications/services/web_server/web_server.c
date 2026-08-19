@@ -539,10 +539,11 @@ bool http_handle_headers(
     return handled;
 }
 
-static void web_srv_discovery_txt(DiscoveryRequest* request, void* context) {
+static void web_srv_discovery_txt(FuriString* txt_out, void* context) {
+    furi_assert(txt_out);
     UNUSED(context);
 
-    discovery_request_feed_txt(request, "path=/");
+    furi_string_set(txt_out, "path=/");
 }
 
 static void web_srv_discovery_init(WebServer* server) {
@@ -550,14 +551,14 @@ static void web_srv_discovery_init(WebServer* server) {
 
     Discovery* discovery = furi_record_open(RECORD_DISCOVERY);
 
-    static const DiscoveryInfo discovery_info = {
+    static const DiscoveryServiceInfo discovery_info = {
         .name = "httpd",
         .service = "_http",
+        .txt_callback = web_srv_discovery_txt,
         .transport = DiscoveryTransportTcp,
         .port = 80,
-        .txt = web_srv_discovery_txt,
     };
-    discovery_service_add(discovery, &discovery_info, &srv);
+    discovery_add_service(discovery, &discovery_info, &srv);
 
     furi_record_close(RECORD_DISCOVERY);
 }
