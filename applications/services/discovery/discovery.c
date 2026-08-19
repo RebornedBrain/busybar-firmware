@@ -52,10 +52,10 @@ typedef struct {
 struct Discovery {
     FuriEventLoop* event_loop;
     FuriMessageQueue* api_queue;
+    FuriString* device_name;
     DiscoveryInterface interfaces[NetworkNetifCount];
     DiscoveryServices_t services;
 
-    DeviceName* device_name;
     DiscoveryServiceInfo device_discovery;
     char device_service_name[(FURI_HAL_VERSION_MAC_LENGTH * 2) + 1];
 
@@ -196,12 +196,8 @@ static void discovery_netif_up(Discovery* discovery, NetworkNetif netif_id) {
         interface->netif = netif;
 
         FuriString* hostname_furi = furi_string_alloc();
-        FuriString* dev_name = furi_string_alloc();
-        // TODO: No get()s on my watch!
-        device_name_get(discovery->device_name, dev_name);
-        const char* hostname =
-            discovery_device_name_to_hostname(furi_string_get_cstr(dev_name), hostname_furi);
-        furi_string_free(dev_name);
+        const char* hostname = discovery_device_name_to_hostname(
+            furi_string_get_cstr(discovery->device_name), hostname_furi);
 
         LOCK_TCPIP_CORE();
 
@@ -250,10 +246,16 @@ static void
 
 static void
     discovery_device_name_handler(Discovery* discovery, const DiscoveryApiMessage* api_message) {
-    const DeviceNameState* state = &api_message->device_name_state;
+    const char* new_device_name = api_message->device_name_state.name;
 
-    FuriString* hostname_furi = furi_string_alloc();
-    const char* hostname = discovery_device_name_to_hostname(state->name, hostname_furi);
+    if(furi_string_equal(discovery->device_name, new_device_name)) {
+        return;
+    }
+
+    furi_string_set(discovery->device_name, new_device_name);
+
+    FuriString* hostname_buf = furi_string_alloc();
+    const char* hostname = discovery_device_name_to_hostname(new_device_name, hostname_buf);
 
     LOCK_TCPIP_CORE();
 
@@ -277,7 +279,7 @@ static void
 
     UNLOCK_TCPIP_CORE();
 
-    furi_string_free(hostname_furi);
+    furi_string_free(hostname_buf);
 }
 
 static void
@@ -370,21 +372,21 @@ static void discovery_subscribe_to_network_state(Discovery* discovery) {
     furi_assert(discovery);
 
     discovery->wifi = furi_record_open(RECORD_WIFI);
-    furi_state_subscribe(wifi_get_state(discovery->wifi), discovery_wifi_state_callback, discovery);
+    furi_state_subscribe(
+        wifi_get_state(discovery->wifi), discovery_wifi_state_callback, discovery);
 
     discovery->usb_network = furi_record_open(RECORD_USB_NETWORK);
     furi_state_subscribe(
-        usb_network_get_state(discovery->usb_network), discovery_usb_network_state_callback, discovery);
+        usb_network_get_state(discovery->usb_network),
+        discovery_usb_network_state_callback,
+        discovery);
 }
 
 static void discovery_busybar_txt(FuriString* txt_out, void* context) {
+    furi_assert(context);
     Discovery* discovery = context;
 
-    FuriString* device_name = furi_string_alloc();
-    device_name_get(discovery->device_name, device_name);
-
-    furi_string_printf(txt_out, "name=%s", furi_string_get_cstr(device_name));
-    furi_string_free(device_name);
+    furi_string_printf(txt_out, "name=%s", furi_string_get_cstr(discovery->device_name));
 }
 
 static void discovery_add_busybar_service(Discovery* discovery) {
@@ -415,7 +417,7 @@ static Discovery* discovery_alloc(void) {
     discovery->event_loop = furi_event_loop_alloc();
     discovery->api_queue = furi_message_queue_alloc(8, sizeof(DiscoveryApiMessage));
     DiscoveryServices_init(discovery->services);
-    discovery->device_name = furi_record_open(RECORD_DEVICE_NAME);
+    discovery->device_name = furi_string_alloc();
 
     furi_event_loop_subscribe_message_queue(
         discovery->event_loop,
@@ -424,10 +426,9 @@ static Discovery* discovery_alloc(void) {
         discovery_api_message_queue_callback,
         discovery);
 
+    DeviceName* device_name = furi_record_open(RECORD_DEVICE_NAME);
     furi_state_subscribe(
-        device_name_get_state(discovery->device_name),
-        discovery_device_name_state_callback,
-        discovery);
+        device_name_get_state(device_name), discovery_device_name_state_callback, discovery);
 
     discovery_init_mdns(discovery);
     discovery_add_busybar_service(discovery);
