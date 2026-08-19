@@ -1,12 +1,13 @@
 #include "discovery.h"
 
-#include <device_name/device_name.h>
+#include <m-array.h>
+
 #include <lwip/api.h>
 #include <lwip/netif.h>
 #include <lwip/tcpip.h>
 #include <lwip/apps/mdns.h>
-#include <m-array.h>
 
+#include <device_name/device_name.h>
 #include <network/network.h>
 #include <wifi/wifi.h>
 #include <usb_network/usb_network.h>
@@ -59,9 +60,7 @@ struct Discovery {
     DiscoveryServiceInfo device_discovery;
     char device_service_name[(FURI_HAL_VERSION_MAC_LENGTH * 2) + 1];
 
-    Wifi* wifi;
     WifiState wifi_state;
-    UsbNetwork* usb_network;
 };
 
 // ==============
@@ -78,9 +77,6 @@ static void
     }
 }
 
-/**
- * No context requirements
- */
 static enum mdns_sd_proto discovery_transport_to_lwip(DiscoveryTransportType transport) {
     if(transport == DiscoveryTransportTypeTcp) {
         return DNSSD_PROTO_TCP;
@@ -91,9 +87,6 @@ static enum mdns_sd_proto discovery_transport_to_lwip(DiscoveryTransportType tra
     }
 }
 
-/**
- * No context requirements
- */
 static const char* discovery_device_name_to_hostname(const char* dev_name, FuriString* buffer) {
     furi_assert(buffer);
 
@@ -116,13 +109,10 @@ static const char* discovery_device_name_to_hostname(const char* dev_name, FuriS
     return furi_string_get_cstr(buffer);
 }
 
-/**
- * Context:
- * - lwIP: locked
- */
 static void discovery_txt_adapter(struct mdns_service* lwip_srv, void* context) {
     furi_assert(lwip_srv);
     furi_assert(context);
+    LWIP_ASSERT_CORE_LOCKED();
 
     DiscoveryService* service = context;
 
@@ -136,14 +126,11 @@ static void discovery_txt_adapter(struct mdns_service* lwip_srv, void* context) 
     }
 }
 
-/**
- * Context:
- * - lwIP: locked
- */
 static void
     discovery_bind_service(const DiscoveryInterface* interface, DiscoveryService* service) {
     furi_assert(interface);
     furi_assert(service);
+    LWIP_ASSERT_CORE_LOCKED();
 
     const DiscoveryServiceInfo* info = &service->info;
     mdns_resp_add_service(
@@ -178,10 +165,6 @@ static void discovery_device_name_state_callback(const void* item, void* context
     discovery_send_api_message(discovery, &api_message);
 }
 
-/**
- * Context:
- * - lwIP: unlocked
- */
 static void discovery_netif_up(Discovery* discovery, NetworkNetif netif_id) {
     furi_check(discovery);
 
@@ -291,14 +274,14 @@ static void
 
 static void
     discovery_wifi_network_handler(Discovery* discovery, const DiscoveryApiMessage* api_message) {
-    // `Wifi` spams `WifiStateConnected` every 30s. we don't want to flood the network.
     const WifiState wifi_state = api_message->wifi_network_state;
-
-    if((wifi_state == WifiStateConnected) && (discovery->wifi_state != WifiStateConnected)) {
-        discovery_netif_up(discovery, NetworkNetifWifi);
+    /* Restrict mdns events to Wifi state changes only. */
+    if(discovery->wifi_state != wifi_state) {
+        if(wifi_state == WifiStateConnected) {
+            discovery_netif_up(discovery, NetworkNetifWifi);
+        }
+        discovery->wifi_state = wifi_state;
     }
-
-    discovery->wifi_state = wifi_state;
 }
 
 static void discovery_api_message_queue_callback(FuriEventLoopObject* object, void* context) {
@@ -361,7 +344,8 @@ static void discovery_usb_network_state_callback(const void* item, void* context
 static void discovery_init_mdns(Discovery* discovery) {
     UNUSED(discovery);
 
-    furi_record_open(RECORD_NETWORK);
+    Network* network = furi_record_open(RECORD_NETWORK);
+    network_init_current_thread(network);
 
     LOCK_TCPIP_CORE();
     mdns_resp_init();
@@ -371,15 +355,12 @@ static void discovery_init_mdns(Discovery* discovery) {
 static void discovery_subscribe_to_network_state(Discovery* discovery) {
     furi_assert(discovery);
 
-    discovery->wifi = furi_record_open(RECORD_WIFI);
-    furi_state_subscribe(
-        wifi_get_state(discovery->wifi), discovery_wifi_state_callback, discovery);
+    Wifi* wifi = furi_record_open(RECORD_WIFI);
+    furi_state_subscribe(wifi_get_state(wifi), discovery_wifi_state_callback, discovery);
 
-    discovery->usb_network = furi_record_open(RECORD_USB_NETWORK);
+    UsbNetwork* usb_network = furi_record_open(RECORD_USB_NETWORK);
     furi_state_subscribe(
-        usb_network_get_state(discovery->usb_network),
-        discovery_usb_network_state_callback,
-        discovery);
+        usb_network_get_state(usb_network), discovery_usb_network_state_callback, discovery);
 }
 
 static void discovery_busybar_txt(FuriString* txt_out, void* context) {
