@@ -456,7 +456,6 @@ void discovery_add_service(Discovery* discovery, const DiscoveryServiceInfo* inf
     furi_check(info);
     furi_check(info->name);
     furi_check(info->service);
-    UNUSED(context);
 
     /* clang-format off */
     const DiscoveryApiMessage api_message = {
