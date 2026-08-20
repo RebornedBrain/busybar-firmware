@@ -57,6 +57,8 @@ struct Discovery {
     WifiState wifi_state;
 };
 
+typedef void (*DiscoveryApiMessageHandler)(Discovery* discovery, const DiscoveryApiMessage* api_message);
+
 // ==============
 // Internal logic
 // ==============
@@ -269,6 +271,13 @@ static void
     }
 }
 
+static const DiscoveryApiMessageHandler discovery_api_handlers[DiscoveryApiMessageTypeMax] = {
+    [DiscoveryApiMessageTypeAddService] = discovery_add_service_handler,
+    [DiscoveryApiMessageTypeDeviceName] = discovery_device_name_handler,
+    [DiscoveryApiMessageTypeUsbNetwork] = discovery_usb_network_handler,
+    [DiscoveryApiMessageTypeWifiNetwork] = discovery_wifi_network_handler,
+};
+
 static void discovery_api_message_queue_callback(FuriEventLoopObject* object, void* context) {
     furi_assert(context);
     Discovery* discovery = context;
@@ -278,19 +287,8 @@ static void discovery_api_message_queue_callback(FuriEventLoopObject* object, vo
 
     DiscoveryApiMessage api_message;
     while(furi_message_queue_get(api_queue, &api_message, 0) == FuriStatusOk) {
-        const DiscoveryApiMessageType type = api_message.type;
-        // TODO: handler array
-        if(type == DiscoveryApiMessageTypeAddService) {
-            discovery_add_service_handler(discovery, &api_message);
-        } else if(type == DiscoveryApiMessageTypeDeviceName) {
-            discovery_device_name_handler(discovery, &api_message);
-        } else if(type == DiscoveryApiMessageTypeUsbNetwork) {
-            discovery_usb_network_handler(discovery, &api_message);
-        } else if(type == DiscoveryApiMessageTypeWifiNetwork) {
-            discovery_wifi_network_handler(discovery, &api_message);
-        } else {
-            furi_crash("Invalid DiscoveryApiMessageType value");
-        }
+        furi_check(api_message.type < DiscoveryApiMessageTypeMax);
+        discovery_api_handlers[api_message.type](discovery, &api_message);
     }
 }
 
