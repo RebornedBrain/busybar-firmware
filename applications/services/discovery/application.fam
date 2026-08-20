@@ -3,7 +3,7 @@ App(
     name="DiscoverySrv",
     apptype=FlipperAppType.SERVICE,
     entry_point="discovery_srv",
-    stack_size=1.5 * 1024,
+    stack_size=2 * 1024,
     targets=["f20", "f21", "f22"],
     cdefines=["SRV_DISCOVERY"],
     requires=["device_name"],
