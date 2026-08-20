@@ -49,13 +49,11 @@ typedef struct {
 struct Discovery {
     FuriEventLoop* event_loop;
     FuriMessageQueue* api_queue;
-    FuriString* device_name;
     struct netif* netifs[NetworkNetifCount];
+    FuriString* device_name;
+    FuriString* device_service_name;
+    DiscoveryServiceInfo device_service_info;
     DiscoveryServiceArray_t services;
-
-    DiscoveryServiceInfo device_discovery;
-    char device_service_name[(FURI_HAL_VERSION_MAC_LENGTH * 2) + 1];
-
     WifiState wifi_state;
 };
 
@@ -366,19 +364,22 @@ static void discovery_busybar_txt(FuriString* txt_out, void* context) {
 static void discovery_add_device_service(Discovery* discovery) {
     const uint8_t* usb_mac = furi_hal_version_get_usb_mac();
 
+    FuriString* device_service_name = discovery->device_service_name;
+    furi_string_reserve(device_service_name, FURI_HAL_VERSION_MAC_LENGTH * 2);
+
     for(size_t i = 0; i < FURI_HAL_VERSION_MAC_LENGTH; i++) {
-        snprintf(discovery->device_service_name + (i * 2), 3, "%02hhx", usb_mac[i]);
+        furi_string_cat_printf(device_service_name, "%02hhx", usb_mac[i]);
     }
 
-    discovery->device_discovery = (const DiscoveryServiceInfo){
-        .name = discovery->device_service_name,
+    discovery->device_service_info = (const DiscoveryServiceInfo){
+        .name = furi_string_get_cstr(device_service_name),
         .service = "_busybar",
         .txt_callback = discovery_busybar_txt,
         .transport_type = DiscoveryTransportTypeTcp,
         .port = 0,
     };
 
-    discovery_add_service(discovery, &discovery->device_discovery, discovery);
+    discovery_add_service(discovery, &discovery->device_service_info, discovery);
 }
 
 // ===============
@@ -391,6 +392,7 @@ static Discovery* discovery_alloc(void) {
     discovery->event_loop = furi_event_loop_alloc();
     discovery->api_queue = furi_message_queue_alloc(8, sizeof(DiscoveryApiMessage));
     discovery->device_name = furi_string_alloc();
+    discovery->device_service_name = furi_string_alloc();
 
     DiscoveryServiceArray_init(discovery->services);
 
