@@ -6,6 +6,9 @@
 
 #include <core/string.h>
 
+/**
+ * @brief The string key for Discovery instance access.
+ */
 #define RECORD_DISCOVERY "discovery"
 
 #ifdef __cplusplus
@@ -14,6 +17,8 @@ extern "C" {
 
 /**
  * @brief Discovery service opaque type.
+ *
+ * Get the instance pointer by calling `furi_record_open(RECORD_DISCOVERY)`
  */
 typedef struct Discovery Discovery;
 
