@@ -21,16 +21,12 @@
 // =====
 
 typedef struct {
-    struct netif* netif;
-} DiscoveryInterface;
-
-typedef struct {
     const DiscoveryServiceInfo* info;
     void* context;
 } DiscoveryService;
 
-ARRAY_DEF(DiscoveryServices, DiscoveryService, M_POD_OPLIST)
-#define M_OPL_DiscoveryServices_t() ARRAY_OPLIST(DiscoveryServices, M_POD_OPLIST)
+ARRAY_DEF(DiscoveryServiceArray, DiscoveryService, M_POD_OPLIST)
+#define M_OPL_DiscoveryServiceArray_t() ARRAY_OPLIST(DiscoveryServiceArray, M_POD_OPLIST)
 
 typedef enum {
     DiscoveryApiMessageTypeAddService,
@@ -54,8 +50,8 @@ struct Discovery {
     FuriEventLoop* event_loop;
     FuriMessageQueue* api_queue;
     FuriString* device_name;
-    DiscoveryInterface interfaces[NetworkNetifCount];
-    DiscoveryServices_t services;
+    struct netif* netifs[NetworkNetifCount];
+    DiscoveryServiceArray_t services;
 
     DiscoveryServiceInfo device_discovery;
     char device_service_name[(FURI_HAL_VERSION_MAC_LENGTH * 2) + 1];
@@ -109,7 +105,7 @@ static const char* discovery_device_name_to_hostname(const char* dev_name, FuriS
     return furi_string_get_cstr(buffer);
 }
 
-static void discovery_txt_adapter(struct mdns_service* lwip_srv, void* context) {
+static void discovery_mdns_txt_callback(struct mdns_service* lwip_srv, void* context) {
     furi_assert(lwip_srv);
     furi_assert(context);
     LWIP_ASSERT_CORE_LOCKED();
@@ -127,28 +123,23 @@ static void discovery_txt_adapter(struct mdns_service* lwip_srv, void* context) 
     }
 }
 
-static void
-    discovery_bind_service(const DiscoveryInterface* interface, DiscoveryService* service) {
-    furi_assert(interface);
+static void discovery_bind_service_to_netif(DiscoveryService* service, struct netif* netif) {
+    furi_assert(netif);
     furi_assert(service);
     LWIP_ASSERT_CORE_LOCKED();
 
     const DiscoveryServiceInfo* info = service->info;
     mdns_resp_add_service(
-        interface->netif,
+        netif,
         info->name,
         info->service,
         discovery_transport_to_lwip(info->transport_type),
         info->port,
-        discovery_txt_adapter,
+        discovery_mdns_txt_callback,
         service);
 
     FURI_LOG_D(
-        TAG,
-        "Bound '%s' to netif '%c%c'",
-        service->info->name,
-        interface->netif->name[0],
-        interface->netif->name[1]);
+        TAG, "Bound '%s' to netif '%c%c'", service->info->name, netif->name[0], netif->name[1]);
 }
 
 static void discovery_device_name_state_callback(const void* item, void* context) {
@@ -174,14 +165,12 @@ static void discovery_netif_up(Discovery* discovery, NetworkNetif netif_id) {
     FURI_LOG_D(TAG, "Network up: netif '%c%c'", netif->name[0], netif->name[1]);
     UNLOCK_TCPIP_CORE();
 
-    DiscoveryInterface* interface = &discovery->interfaces[netif_id];
+    if(discovery->netifs[netif_id] == NULL) {
+        discovery->netifs[netif_id] = netif;
 
-    if(!interface->netif) {
-        interface->netif = netif;
-
-        FuriString* hostname_furi = furi_string_alloc();
+        FuriString* hostname_buf = furi_string_alloc();
         const char* hostname = discovery_device_name_to_hostname(
-            furi_string_get_cstr(discovery->device_name), hostname_furi);
+            furi_string_get_cstr(discovery->device_name), hostname_buf);
 
         LOCK_TCPIP_CORE();
 
@@ -190,13 +179,13 @@ static void discovery_netif_up(Discovery* discovery, NetworkNetif netif_id) {
             TAG, "Added netif '%c%c' with name '%s'", netif->name[0], netif->name[1], hostname);
 
         /* clang-format off */
-        for M_EACH(service, discovery->services, DiscoveryServices_t) {
-            discovery_bind_service(interface, service);
+        for M_EACH(service, discovery->services, DiscoveryServiceArray_t) {
+            discovery_bind_service_to_netif(service, netif);
         }
         /* clang-format on */
 
         UNLOCK_TCPIP_CORE();
-        furi_string_free(hostname_furi);
+        furi_string_free(hostname_buf);
     }
 
     LOCK_TCPIP_CORE();
@@ -208,24 +197,22 @@ static void discovery_netif_up(Discovery* discovery, NetworkNetif netif_id) {
 
 static void
     discovery_add_service_handler(Discovery* discovery, const DiscoveryApiMessage* api_message) {
-    const DiscoveryService* service_to_add = &api_message->service_to_add;
-    FURI_LOG_I(TAG, "Service added: '%s'", service_to_add->info->name);
-
-    DiscoveryService* service = DiscoveryServices_push_new(discovery->services);
-    *service = *service_to_add;
+    DiscoveryService* service = DiscoveryServiceArray_push_new(discovery->services);
+    *service = api_message->service_to_add;
 
     LOCK_TCPIP_CORE();
 
-    for(size_t i = 0; i < COUNT_OF(discovery->interfaces); i++) {
-        const DiscoveryInterface* interface = &discovery->interfaces[i];
-        if(interface->netif == NULL) {
-            continue;
-        }
+    for(size_t i = 0; i < COUNT_OF(discovery->netifs); i++) {
+        struct netif* netif = discovery->netifs[i];
 
-        discovery_bind_service(interface, service);
+        if(netif != NULL) {
+            discovery_bind_service_to_netif(service, netif);
+        }
     }
 
     UNLOCK_TCPIP_CORE();
+
+    FURI_LOG_I(TAG, "Service added: '%s'", service->info->name);
 }
 
 static void
@@ -243,9 +230,8 @@ static void
 
     LOCK_TCPIP_CORE();
 
-    for(size_t i = 0; i < COUNT_OF(discovery->interfaces); i++) {
-        const DiscoveryInterface* interface = &discovery->interfaces[i];
-        struct netif* netif = interface->netif;
+    for(size_t i = 0; i < COUNT_OF(discovery->netifs); i++) {
+        struct netif* netif = discovery->netifs[i];
         if(netif == NULL) {
             continue;
         }
@@ -353,6 +339,12 @@ static void discovery_init_mdns(Discovery* discovery) {
     UNLOCK_TCPIP_CORE();
 }
 
+static void discovery_subscribe_to_device_name(Discovery* discovery) {
+    DeviceName* device_name = furi_record_open(RECORD_DEVICE_NAME);
+    furi_state_subscribe(
+        device_name_get_state(device_name), discovery_device_name_state_callback, discovery);
+}
+
 static void discovery_subscribe_to_network_state(Discovery* discovery) {
     furi_assert(discovery);
 
@@ -398,8 +390,9 @@ static Discovery* discovery_alloc(void) {
 
     discovery->event_loop = furi_event_loop_alloc();
     discovery->api_queue = furi_message_queue_alloc(8, sizeof(DiscoveryApiMessage));
-    DiscoveryServices_init(discovery->services);
     discovery->device_name = furi_string_alloc();
+
+    DiscoveryServiceArray_init(discovery->services);
 
     furi_event_loop_subscribe_message_queue(
         discovery->event_loop,
@@ -408,12 +401,11 @@ static Discovery* discovery_alloc(void) {
         discovery_api_message_queue_callback,
         discovery);
 
-    DeviceName* device_name = furi_record_open(RECORD_DEVICE_NAME);
-    furi_state_subscribe(
-        device_name_get_state(device_name), discovery_device_name_state_callback, discovery);
-
     discovery_init_mdns(discovery);
+
+    discovery_subscribe_to_device_name(discovery);
     discovery_subscribe_to_network_state(discovery);
+
     discovery_add_device_service(discovery);
 
     furi_record_create(RECORD_DISCOVERY, discovery);
