@@ -2,8 +2,6 @@
 
 #include <m-array.h>
 
-#include <lwip/api.h>
-#include <lwip/netif.h>
 #include <lwip/tcpip.h>
 #include <lwip/apps/mdns.h>
 
