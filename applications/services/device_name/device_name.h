@@ -34,6 +34,13 @@ extern "C" {
 typedef struct DeviceName DeviceName;
 
 /**
+ * @brief DeviceName information structure.
+ */
+typedef struct {
+    char name[DEVICE_NAME_MAX_SIZE]; /**< Current device name */
+} DeviceNameInfo;
+
+/**
  * @brief Validation status returned by device_name_set().
  */
 typedef enum {
