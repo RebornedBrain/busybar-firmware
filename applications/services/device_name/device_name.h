@@ -21,6 +21,9 @@
 extern "C" {
 #endif
 
+/**
+ * @brief The string key for DeviceName instance access.
+ */
 #define RECORD_DEVICE_NAME "device_name"
 
 /**
@@ -66,7 +69,7 @@ DeviceNameError device_name_set(DeviceName* instance, const char* name);
 /**
  * @brief Get the DeviceName state object.
  *
- * The return value will be of @ref DeviceState underlying type.
+ * The return value will be of @ref DeviceNameInfo underlying type.
  *
  * @param[in] instance Device name service instance
  * @returns pointer to the state object

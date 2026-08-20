@@ -34,7 +34,7 @@ typedef struct {
 } WifiGetInfoMessage;
 
 typedef struct {
-    DeviceNameState device_name_state;
+    DeviceNameInfo device_name_info;
 } WifiSetHostnameMessage;
 
 typedef struct {
@@ -83,7 +83,7 @@ void wifi_schedule_disconnect_request(Wifi* instance);
 
 void wifi_schedule_deinit_request(Wifi* instance);
 
-void wifi_schedule_set_hostname_request(Wifi* instance, const DeviceNameState* device_name_state);
+void wifi_schedule_set_hostname_request(Wifi* instance, const DeviceNameInfo* device_name_state);
 
 // Network management
 void wifi_net_init(Wifi* instance, const uint8_t* hw_addr);

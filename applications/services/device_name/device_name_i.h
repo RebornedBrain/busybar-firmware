@@ -1,7 +1,3 @@
-/**
- * @brief Device Name service internal header
- */
-
 #pragma once
 
 #ifdef __cplusplus

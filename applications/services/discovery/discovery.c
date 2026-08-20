@@ -40,7 +40,7 @@ typedef struct {
     DiscoveryApiMessageType type;
     union {
         DiscoveryService service_to_add;
-        DeviceNameState device_name_state;
+        DeviceNameInfo device_name_info;
         UsbNetworkState usb_network_state;
         WifiState wifi_network_state;
     };
@@ -144,12 +144,12 @@ static void discovery_device_name_state_callback(const void* item, void* context
     furi_assert(item);
     furi_assert(context);
 
-    const DeviceNameState* state = item;
+    const DeviceNameInfo* state = item;
     Discovery* discovery = context;
 
     const DiscoveryApiMessage api_message = {
         .type = DiscoveryApiMessageTypeDeviceName,
-        .device_name_state = *state,
+        .device_name_info = *state,
     };
 
     discovery_send_api_message(discovery, &api_message);
@@ -215,7 +215,7 @@ static void
 
 static void
     discovery_device_name_handler(Discovery* discovery, const DiscoveryApiMessage* api_message) {
-    const char* new_device_name = api_message->device_name_state.name;
+    const char* new_device_name = api_message->device_name_info.name;
 
     if(furi_string_equal(discovery->device_name, new_device_name)) {
         return;

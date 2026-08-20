@@ -50,11 +50,11 @@ DeviceNameError device_name_validate(const char* name) {
 }
 
 static char* device_name_build_mqtt_message(const DeviceName* instance) {
-    DeviceNameState state;
-    furi_state_get(instance->state, &state);
+    DeviceNameInfo info;
+    furi_state_get(instance->state, &info);
 
     cJSON* json = cJSON_CreateObject();
-    cJSON_AddStringToObject(json, "name", state.name);
+    cJSON_AddStringToObject(json, "name", info.name);
 
     char* json_text = cJSON_PrintUnformatted(json);
     furi_check(json_text);
@@ -70,6 +70,12 @@ static void device_name_publish_mqtt_message(DeviceName* instance) {
         instance->mqtt, MqttQosAtLeastOnce, DEVICE_NAME_MQTT_PREFIX, json_text, strlen(json_text));
 
     free(json_text);
+}
+
+static void device_name_set_name_internal(DeviceName* instance, const char* new_name) {
+    with_furi_state(instance->state, DeviceNameInfo * info, {
+        strlcpy(info->name, new_name, sizeof(info->name));
+    });
 }
 
 static void device_name_set_handler(DeviceName* instance, const DeviceNameMessage* message) {
@@ -97,10 +103,7 @@ static void device_name_set_handler(DeviceName* instance, const DeviceNameMessag
 
         FURI_LOG_I(TAG, "New name: %s", new_name);
 
-        with_furi_state(instance->state, DeviceNameState * state, {
-            strlcpy(state->name, new_name, sizeof(state->name));
-        });
-
+        device_name_set_name_internal(instance, new_name);
         device_name_publish_mqtt_message(instance);
 
     } while(false);
@@ -173,9 +176,7 @@ static void device_name_load_settings(DeviceName* instance) {
     DeviceNameSettings settings;
     device_name_settings_load(&settings);
 
-    with_furi_state(instance->state, DeviceNameState * state, {
-        strlcpy(state->name, settings.name, sizeof(state->name));
-    });
+    device_name_set_name_internal(instance, settings.name);
 
     FURI_LOG_I(TAG, "Device name: %s", settings.name);
 }
@@ -185,7 +186,7 @@ static DeviceName* device_name_alloc(void) {
 
     instance->event_loop = furi_event_loop_alloc();
     instance->queue = furi_message_queue_alloc(1, sizeof(DeviceNameMessage));
-    instance->state = furi_state_alloc(sizeof(DeviceNameState));
+    instance->state = furi_state_alloc(sizeof(DeviceNameInfo));
 
     device_name_load_settings(instance);
 

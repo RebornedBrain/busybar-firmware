@@ -401,9 +401,9 @@ static BSB_State_StateUpdate* collect_device_name(const char* name) {
 
 static void device_name_state_callback(const void* item, void* context) {
     StatePublisher* instance = context;
-    const DeviceNameState* state = item;
+    const DeviceNameInfo* device_name_info = item;
 
-    BSB_State_StateUpdate* update = collect_device_name(state->name);
+    BSB_State_StateUpdate* update = collect_device_name(device_name_info->name);
     state_publisher_schedule_state_update(instance, update, StreamFlagAll);
 }
 

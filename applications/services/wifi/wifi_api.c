@@ -118,12 +118,12 @@ void wifi_schedule_deinit_request(Wifi* instance) {
     wifi_api_override_request(instance, &msg);
 }
 
-void wifi_schedule_set_hostname_request(Wifi* instance, const DeviceNameState* device_name_state) {
+void wifi_schedule_set_hostname_request(Wifi* instance, const DeviceNameInfo* device_name_info) {
     furi_assert(instance);
 
     const WifiMessage msg = {
         .request_type = WifiRequestTypeSetHostname,
-        .set_hostname_message = {.device_name_state = *device_name_state},
+        .set_hostname_message = {.device_name_info = *device_name_info},
     };
 
     wifi_api_nonblocking_request(instance, &msg);

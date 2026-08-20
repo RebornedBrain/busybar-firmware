@@ -10,10 +10,10 @@ void device_name_get(DeviceName* instance, FuriString* name) {
     furi_check(instance);
     furi_check(name);
 
-    DeviceNameState state;
-    furi_state_get(instance->state, &state);
+    DeviceNameInfo info;
+    furi_state_get(instance->state, &info);
 
-    furi_string_set(name, state.name);
+    furi_string_set(name, info.name);
 }
 
 DeviceNameError device_name_set(DeviceName* instance, const char* name) {

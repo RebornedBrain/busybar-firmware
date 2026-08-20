@@ -28,9 +28,9 @@ static void wifi_device_name_state_callback(const void* item, void* context) {
     furi_assert(context);
 
     Wifi* instance = context;
-    const DeviceNameState* device_name_state = item;
+    const DeviceNameInfo* device_name_info = item;
 
-    wifi_schedule_set_hostname_request(instance, device_name_state);
+    wifi_schedule_set_hostname_request(instance, device_name_info);
 }
 
 static void wifi_intercom_rx_callback(const void* data, size_t data_size, void* context) {
@@ -146,7 +146,7 @@ static void wifi_process_request(Wifi* instance) {
             break; // No backend request necessary
         } else if(request_type == WifiRequestTypeSetHostname) {
             const WifiSetHostnameMessage* set_hostname_message = &message->set_hostname_message;
-            const char* new_hostname = set_hostname_message->device_name_state.name;
+            const char* new_hostname = set_hostname_message->device_name_info.name;
 
             wifi_net_set_hostname(instance, new_hostname);
             break; // No backend request necessary
