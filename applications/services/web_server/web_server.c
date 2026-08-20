@@ -558,9 +558,10 @@ static void web_srv_discovery_init(WebServer* server) {
         .transport_type = DiscoveryTransportTypeTcp,
         .port = 80,
     };
-    discovery_add_service(discovery, &discovery_info, &srv);
 
-    furi_record_close(RECORD_DISCOVERY);
+    if(!discovery_add_service(discovery, &discovery_info, &srv)) {
+        FURI_LOG_E(TAG, "Failed to register network discovery service");
+    }
 }
 
 int32_t web_srv_start(void* p) {

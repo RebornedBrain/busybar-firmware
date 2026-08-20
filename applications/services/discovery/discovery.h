@@ -52,9 +52,11 @@ typedef struct {
  *
  * @param[in,out] discovery Discovery service
  * @param[in] info Service info to be announced
- * @param[in,out] context Context for @p txt_callback. May be @c NULL
+ * @param[in,out] context Context for @p txt_callback (may be @c NULL)
+ *
+ * @returns @c true on success, @c false otherwise
  */
-void discovery_add_service(Discovery* discovery, const DiscoveryServiceInfo* info, void* context);
+bool discovery_add_service(Discovery* discovery, const DiscoveryServiceInfo* info, void* context);
 
 #ifdef __cplusplus
 }

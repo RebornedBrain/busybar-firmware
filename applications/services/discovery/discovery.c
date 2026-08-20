@@ -16,6 +16,9 @@
 
 #define TAG "Discovery"
 
+#define DISCOVERY_API_TIMEOUT_TICKS (1000)
+#define DISCOVERY_API_QUEUE_SIZE    (8)
+
 // =====
 // Types
 // =====
@@ -57,20 +60,26 @@ struct Discovery {
     WifiState wifi_state;
 };
 
-typedef void (*DiscoveryApiMessageHandler)(Discovery* discovery, const DiscoveryApiMessage* api_message);
+typedef void (
+    *DiscoveryApiMessageHandler)(Discovery* discovery, const DiscoveryApiMessage* api_message);
 
 // ==============
 // Internal logic
 // ==============
 
-static void
+static bool
     discovery_send_api_message(Discovery* discovery, const DiscoveryApiMessage* api_message) {
-    const FuriStatus status = furi_message_queue_put(discovery->api_queue, api_message, 1000);
+    bool success = true;
+
+    const FuriStatus status =
+        furi_message_queue_put(discovery->api_queue, api_message, DISCOVERY_API_TIMEOUT_TICKS);
 
     if(status != FuriStatusOk) {
         furi_check(status == FuriStatusErrorTimeout);
-        FURI_LOG_W(TAG, "Api message queue overflow");
+        success = false;
     }
+
+    return success;
 }
 
 static enum mdns_sd_proto discovery_transport_to_lwip(DiscoveryTransportType transport) {
@@ -154,7 +163,9 @@ static void discovery_device_name_state_callback(const void* item, void* context
         .device_name_info = *state,
     };
 
-    discovery_send_api_message(discovery, &api_message);
+    if(!discovery_send_api_message(discovery, &api_message)) {
+        FURI_LOG_W(TAG, "Device name change dropped");
+    }
 }
 
 static void discovery_netif_up(Discovery* discovery, NetworkNetif netif_id) {
@@ -307,7 +318,9 @@ static void discovery_wifi_state_callback(const void* item, void* context) {
         .wifi_network_state = info->state,
     };
 
-    discovery_send_api_message(discovery, &api_message);
+    if(!discovery_send_api_message(discovery, &api_message)) {
+        FURI_LOG_W(TAG, "Wireless network state dropped");
+    }
 }
 
 static void discovery_usb_network_state_callback(const void* item, void* context) {
@@ -321,7 +334,9 @@ static void discovery_usb_network_state_callback(const void* item, void* context
         .usb_network_state = info->state,
     };
 
-    discovery_send_api_message(discovery, &api_message);
+    if(!discovery_send_api_message(discovery, &api_message)) {
+        FURI_LOG_W(TAG, "USB network state dropped");
+    }
 }
 
 static void discovery_init_mdns(Discovery* discovery) {
@@ -377,7 +392,7 @@ static void discovery_add_device_service(Discovery* discovery) {
         .port = 0,
     };
 
-    discovery_add_service(discovery, &discovery->device_service_info, discovery);
+    furi_check(discovery_add_service(discovery, &discovery->device_service_info, discovery));
 }
 
 // ===============
@@ -388,7 +403,8 @@ static Discovery* discovery_alloc(void) {
     Discovery* discovery = malloc(sizeof(Discovery));
 
     discovery->event_loop = furi_event_loop_alloc();
-    discovery->api_queue = furi_message_queue_alloc(8, sizeof(DiscoveryApiMessage));
+    discovery->api_queue =
+        furi_message_queue_alloc(DISCOVERY_API_QUEUE_SIZE, sizeof(DiscoveryApiMessage));
     discovery->device_name = furi_string_alloc();
     discovery->device_service_name = furi_string_alloc();
 
@@ -426,7 +442,7 @@ int32_t discovery_srv(void* arg) {
 // Public API for services
 // =======================
 
-void discovery_add_service(Discovery* discovery, const DiscoveryServiceInfo* info, void* context) {
+bool discovery_add_service(Discovery* discovery, const DiscoveryServiceInfo* info, void* context) {
     furi_check(discovery);
     furi_check(info);
     furi_check(info->name);
@@ -442,5 +458,5 @@ void discovery_add_service(Discovery* discovery, const DiscoveryServiceInfo* inf
     };
     /* clang-format on */
 
-    discovery_send_api_message(discovery, &api_message);
+    return discovery_send_api_message(discovery, &api_message);
 }
