@@ -1,6 +1,6 @@
 /**
  * @file discovery.h
- * @brief Facilitates discovery of this device on the local network using mDNS.
+ * @brief mDNS network discovery service API.
  */
 #pragma once
 
@@ -12,26 +12,37 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Discovery service opaque type.
+ */
 typedef struct Discovery Discovery;
 
+/**
+ * @brief Discovery TXT record callback function type.
+ *
+ * @param[out] txt_out pointer to the output buffer string
+ * @param[in,out] context pointer to the user-specific object (may be @c NULL)
+ */
 typedef void (*DiscoveryTxtCallback)(FuriString* txt_out, void* context);
 
+/**
+ * @brief Enumeration of supported transport protocol types.
+ */
 typedef enum {
-    DiscoveryTransportTypeTcp,
-    DiscoveryTransportTypeUdp,
+    DiscoveryTransportTypeTcp, /**< TCP as transport protocol */
+    DiscoveryTransportTypeUdp, /**< UDP as transport protocol */
 } DiscoveryTransportType;
 
+/**
+ * @brief Announced service information structure.
+ */
 typedef struct {
-    const char* name;
-    const char* service;
-    DiscoveryTxtCallback txt_callback;
-    DiscoveryTransportType transport_type;
-    uint16_t port;
+    const char* name; /**< The service's name string (e.g. "httpd") */
+    const char* service; /**< The service type string (e.g. "_http") */
+    DiscoveryTxtCallback txt_callback; /**< Pointer to the TXT callback function */
+    DiscoveryTransportType transport_type; /**< Transport protocol type */
+    uint16_t port; /**< Port number the service is listening on (e.g. 80) */
 } DiscoveryServiceInfo;
-
-// ================
-// API for services
-// ================
 
 /**
  * @brief Add a service to be announced to the local network.
