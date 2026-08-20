@@ -1,6 +1,6 @@
 /**
  * @file discovery.h
- * Facilitates discovery of this device on the local network using mDNS
+ * @brief Facilitates discovery of this device on the local network using mDNS.
  */
 #pragma once
 
@@ -34,7 +34,10 @@ typedef struct {
 // ================
 
 /**
- * @brief Adds a service to be announced to the local network
+ * @brief Add a service to be announced to the local network.
+ *
+ * @warning The data pointed to by @p info and @c context must live forever
+ *          (i.e. must NOT be deleted after the call to this function).
  *
  * @param[in,out] discovery Discovery service
  * @param[in] info Service info to be announced

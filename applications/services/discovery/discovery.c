@@ -25,7 +25,7 @@ typedef struct {
 } DiscoveryInterface;
 
 typedef struct {
-    DiscoveryServiceInfo info;
+    const DiscoveryServiceInfo* info;
     void* context;
 } DiscoveryService;
 
@@ -115,11 +115,12 @@ static void discovery_txt_adapter(struct mdns_service* lwip_srv, void* context) 
     LWIP_ASSERT_CORE_LOCKED();
 
     DiscoveryService* service = context;
+    const DiscoveryServiceInfo* info = service->info;
 
-    if(service->info.txt_callback) {
+    if(info->txt_callback) {
         FuriString* txt = furi_string_alloc();
 
-        service->info.txt_callback(txt, service->context);
+        info->txt_callback(txt, service->context);
         mdns_resp_add_service_txtitem(lwip_srv, furi_string_get_cstr(txt), furi_string_size(txt));
 
         furi_string_free(txt);
@@ -132,7 +133,7 @@ static void
     furi_assert(service);
     LWIP_ASSERT_CORE_LOCKED();
 
-    const DiscoveryServiceInfo* info = &service->info;
+    const DiscoveryServiceInfo* info = service->info;
     mdns_resp_add_service(
         interface->netif,
         info->name,
@@ -145,7 +146,7 @@ static void
     FURI_LOG_D(
         TAG,
         "Bound '%s' to netif '%c%c'",
-        service->info.name,
+        service->info->name,
         interface->netif->name[0],
         interface->netif->name[1]);
 }
@@ -208,7 +209,7 @@ static void discovery_netif_up(Discovery* discovery, NetworkNetif netif_id) {
 static void
     discovery_add_service_handler(Discovery* discovery, const DiscoveryApiMessage* api_message) {
     const DiscoveryService* service_to_add = &api_message->service_to_add;
-    FURI_LOG_I(TAG, "Service added: '%s'", service_to_add->info.name);
+    FURI_LOG_I(TAG, "Service added: '%s'", service_to_add->info->name);
 
     DiscoveryService* service = DiscoveryServices_push_new(discovery->services);
     *service = *service_to_add;
@@ -370,7 +371,7 @@ static void discovery_busybar_txt(FuriString* txt_out, void* context) {
     furi_string_printf(txt_out, "name=%s", furi_string_get_cstr(discovery->device_name));
 }
 
-static void discovery_add_busybar_service(Discovery* discovery) {
+static void discovery_add_device_service(Discovery* discovery) {
     const uint8_t* usb_mac = furi_hal_version_get_usb_mac();
 
     for(size_t i = 0; i < FURI_HAL_VERSION_MAC_LENGTH; i++) {
@@ -412,8 +413,8 @@ static Discovery* discovery_alloc(void) {
         device_name_get_state(device_name), discovery_device_name_state_callback, discovery);
 
     discovery_init_mdns(discovery);
-    discovery_add_busybar_service(discovery);
     discovery_subscribe_to_network_state(discovery);
+    discovery_add_device_service(discovery);
 
     furi_record_create(RECORD_DISCOVERY, discovery);
 
@@ -443,7 +444,7 @@ void discovery_add_service(Discovery* discovery, const DiscoveryServiceInfo* inf
     const DiscoveryApiMessage api_message = {
         .type = DiscoveryApiMessageTypeAddService,
         .service_to_add = {
-            .info = *info,
+            .info = info,
             .context = context,
         },
     };
