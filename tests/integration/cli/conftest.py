@@ -14,6 +14,7 @@ from clients.cli import SimpleCLIConnection
 from utils.cli_helpers import resync
 from utils.fetch_http_server import FetchHTTPServer, FetchRequestHandler
 from utils.js_test_runner import run_js_case
+from utils.wait import wait_for
 from utils.wifi_helpers import (
     wait_for_wifi_link_stable,
     wifi_connect_was_already_satisfied,
@@ -109,6 +110,18 @@ def device_wifi_ready(wifi_api: WifiAPI):
     """Ensure the device has a connected Wi-Fi interface and usable IP."""
     with allure.step("Ensure the device is connected to Wi-Fi"):
         initial_status = wifi_api.get_status()
+        if initial_status.state == "unknown":
+            try:
+                initial_status = wait_for(
+                    "Wi-Fi service to leave the unknown state",
+                    wifi_api.get_status,
+                    lambda status: status.state != "unknown",
+                    timeout=10,
+                    interval=0.5,
+                )
+            except AssertionError as error:
+                pytest.fail(f"Wi-Fi service did not initialize: {error}")
+
         if not wifi_connection_is_active(initial_status):
             if not WIFI_SSID:
                 pytest.skip(
