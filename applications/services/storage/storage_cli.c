@@ -113,7 +113,7 @@ static void storage_cli_format(PipeSide* pipe, FuriString* path, FuriString* arg
             if(error != FSE_OK) {
                 storage_cli_print_error(error);
             } else {
-                printf("Patition was successfully formatted.\r\n");
+                printf("Partition was successfully formatted.\r\n");
             }
             furi_record_close(RECORD_STORAGE);
             break;
