@@ -706,6 +706,7 @@ static void storage_cli_print_usage(void) {
 
     for(size_t i = 0; i < COUNT_OF(storage_cli_commands); ++i) {
         const StorageCliCommand* command_descr = &storage_cli_commands[i];
+        if(command_descr->visible && !command_descr->visible()) continue;
         const char* cli_cmd = command_descr->command;
         printf(
             "\t%s%s - %s\r\n", cli_cmd, strlen(cli_cmd) > 8 ? "\t" : "\t\t", command_descr->help);
@@ -733,6 +734,7 @@ void storage_command(PipeSide* pipe, FuriString* args, void* context) {
         size_t i = 0;
         for(; i < COUNT_OF(storage_cli_commands); ++i) {
             const StorageCliCommand* command_descr = &storage_cli_commands[i];
+            if(command_descr->visible && !command_descr->visible()) continue;
             if(furi_string_cmp_str(cmd, command_descr->command) == 0) {
                 command_descr->impl(pipe, path, args);
                 break;
