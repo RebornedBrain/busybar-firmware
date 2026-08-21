@@ -340,7 +340,7 @@ static void wifi_custom_event_callback(uint32_t events, void* context) {
 
     if(events == WifiEventRequest) {
         wifi_process_request(instance);
-    } else {
+    } else if(events != 0) {
         furi_crash("Multiple Wifi events");
     }
 }
