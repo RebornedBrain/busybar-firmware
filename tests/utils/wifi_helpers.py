@@ -20,6 +20,13 @@ from utils.wait import wait_for
 
 WIFI_LINK_STABLE_SAMPLES = 3
 WIFI_LINK_POLL_INTERVAL_SECONDS = 0.5
+WIFI_CONNECTION_ACTIVE_STATES = frozenset(
+    (
+        "connected",
+        "connecting",
+        "reconnecting",
+    )
+)
 FETCH_NETWORK_ATTEMPTS = 2
 FETCH_RECOVERY_TIMEOUT_SECONDS = 100.0
 FETCH_ATTEMPT_TIMEOUT_SECONDS = 25.0
@@ -71,6 +78,16 @@ class FetchRecoveryError(AssertionError):
     ) -> None:
         self.attempts = tuple(attempts)
         super().__init__(message)
+
+
+def wifi_connection_is_active(status: WifiStatusResponse) -> bool:
+    """Return whether Wi-Fi is connected or converging to connected."""
+    return status.state in WIFI_CONNECTION_ACTIVE_STATES
+
+
+def wifi_connect_was_already_satisfied(status_code: int, body: str) -> bool:
+    """Recognize the idempotent connect race reported by the firmware API."""
+    return status_code == 400 and "already connected" in body.lower()
 
 
 def wait_for_wifi_state(
@@ -180,13 +197,29 @@ def connect_to_test_network_or_fail(
 ) -> WifiStatusResponse:
     """Connect to the test SSID and wait for a stable usable link."""
     deadline = time.monotonic() + timeout
-    response = wifi_api.connect_to_test_network(timeout=timeout)
-    if response.status_code != 200:
-        body = response.text.strip() or "(empty body)"
-        pytest.fail(
-            f"POST /api/wifi/connect to {WIFI_SSID!r} failed: "
-            f"HTTP {response.status_code} — {body}"
+    initial_status = wifi_api.get_status()
+    if wifi_connection_is_active(initial_status):
+        logger.info(
+            "Wi-Fi is already active (%s); waiting for a stable link",
+            initial_status.state,
         )
+    else:
+        response = wifi_api.connect_to_test_network(timeout=timeout)
+        already_connected = wifi_connect_was_already_satisfied(
+            response.status_code,
+            response.text,
+        )
+        if response.status_code != 200 and not already_connected:
+            body = response.text.strip() or "(empty body)"
+            pytest.fail(
+                f"POST /api/wifi/connect to {WIFI_SSID!r} failed: "
+                f"HTTP {response.status_code} — {body}"
+            )
+        if response.status_code != 200:
+            logger.info(
+                "Wi-Fi became active before POST /api/wifi/connect completed; "
+                "waiting for a stable link"
+            )
 
     remaining = deadline - time.monotonic()
     if remaining <= 0:
