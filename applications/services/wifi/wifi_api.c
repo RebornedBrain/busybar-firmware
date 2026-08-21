@@ -40,8 +40,8 @@ static void wifi_api_nonblocking_request(Wifi* instance, const WifiMessage* mess
 }
 
 static void wifi_api_override_request(Wifi* instance, const WifiMessage* message) {
-    const FuriStatus queue_status =
-        furi_message_queue_put(instance->override_queue, message, furi_ms_to_ticks(WIFI_API_TIMEOUT_MS));
+    const FuriStatus queue_status = furi_message_queue_put(
+        instance->override_queue, message, furi_ms_to_ticks(WIFI_API_TIMEOUT_MS));
 
     if(queue_status != FuriStatusOk) {
         furi_check(queue_status == FuriStatusErrorTimeout);
