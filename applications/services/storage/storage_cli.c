@@ -572,11 +572,13 @@ static void storage_cli_extract(PipeSide* pipe, FuriString* old_path, FuriString
 }
 
 typedef void (*StorageCliCommandCallback)(PipeSide* pipe, FuriString* path, FuriString* args);
+typedef bool (*StorageCliCommandVisibleCallback)(void);
 
 typedef struct {
     const char* command;
     const char* help;
     const StorageCliCommandCallback impl;
+    const StorageCliCommandVisibleCallback visible;
 } StorageCliCommand;
 
 static const StorageCliCommand storage_cli_commands[] = {
