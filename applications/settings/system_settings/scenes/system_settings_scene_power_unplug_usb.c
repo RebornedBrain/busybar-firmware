@@ -82,13 +82,15 @@ static bool
     if(event->type == SceneManagerEventTypeCustom) {
         if(event->event == SceneEventPowerUsbConnectionEvent) {
             if(!power_is_usb_connected(instance->power)) {
-                scene_manager_next_scene(instance->scene_manager, SceneIdPowerShutDownConfirm);
+                scene_manager_replace_current_scene(
+                    instance->scene_manager, SceneIdPowerShutDownConfirm);
                 consumed = true;
             }
         }
     } else if(event->type == SceneManagerEventTypeBack) {
         system_settings_pop_location(instance);
-        consumed = scene_manager_previous_scene(instance->scene_manager);
+        consumed = scene_manager_search_and_switch_to_previous_scene(
+            instance->scene_manager, SceneIdPowerMenu);
     }
 
     return consumed;
