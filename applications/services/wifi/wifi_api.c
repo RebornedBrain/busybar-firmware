@@ -34,12 +34,14 @@ static WifiStatus wifi_api_blocking_request(Wifi* instance, WifiMessage* message
 static void wifi_api_nonblocking_request(Wifi* instance, const WifiMessage* message) {
     if(wifi_api_try_lock(instance)) {
         wifi_api_send_message(instance, message);
+    } else {
+        FURI_LOG_W(TAG, "Failed to send nonblocking request");
     }
 }
 
 static void wifi_api_override_request(Wifi* instance, const WifiMessage* message) {
     const FuriStatus queue_status =
-        furi_message_queue_put(instance->override_queue, message, WIFI_API_TIMEOUT_MS);
+        furi_message_queue_put(instance->override_queue, message, furi_ms_to_ticks(WIFI_API_TIMEOUT_MS));
 
     if(queue_status != FuriStatusOk) {
         furi_check(queue_status == FuriStatusErrorTimeout);
@@ -80,7 +82,7 @@ void wifi_schedule_init_request(Wifi* instance) {
         .request_type = WifiRequestTypeInit,
     };
 
-    wifi_api_nonblocking_request(instance, &msg);
+    wifi_api_override_request(instance, &msg);
 }
 
 void wifi_schedule_connect_request(Wifi* instance, const WifiSettings* settings) {
