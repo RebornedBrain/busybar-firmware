@@ -5,11 +5,13 @@
 typedef enum {
     SceneEventConfirm = AppEventSceneEventsStart,
     SceneEventCancel,
+    SceneEventPowerUsbConnectionEvent,
 } SceneEvent;
 
 typedef struct {
     Dialog* front_dialog;
     Dialog* back_dialog;
+    FuriPubSubSubscription* power_subscription;
 } SceneSystemPowerShutDownConfirm;
 
 static void system_settings_scene_power_shut_down_confirm_callback(uint8_t result, void* context) {
@@ -21,12 +23,30 @@ static void system_settings_scene_power_shut_down_confirm_callback(uint8_t resul
     }
 }
 
+static void
+    system_settings_scene_power_shut_down_event_callback(const void* message, void* context) {
+    furi_assert(message);
+    furi_assert(context);
+
+    PowerEvent* event = (PowerEvent*)message;
+    SystemSettings* instance = context;
+
+    if(event->type == PowerEventUsbConnectionStateUpdate) {
+        system_settings_send_custom_event(instance, SceneEventPowerUsbConnectionEvent);
+    }
+}
+
 static void system_settings_scene_shut_down_confirm_on_enter(void* context) {
     furi_assert(context);
 
     SystemSettings* instance = context;
     SceneSystemPowerShutDownConfirm* data =
         scene_manager_get_scene_data(instance->scene_manager, SceneIdPowerShutDownConfirm);
+
+    data->power_subscription = furi_pubsub_subscribe(
+        power_get_pubsub(instance->power),
+        system_settings_scene_power_shut_down_event_callback,
+        instance);
 
     with_gui(instance->gui, {
         data->front_dialog = dialog_alloc(instance->front_scene_window);
@@ -53,6 +73,7 @@ static void system_settings_scene_shut_down_confirm_on_exit(void* context) {
     SystemSettings* instance = context;
     SceneSystemPowerShutDownConfirm* data =
         scene_manager_get_scene_data(instance->scene_manager, SceneIdPowerShutDownConfirm);
+    furi_pubsub_unsubscribe(power_get_pubsub(instance->power), data->power_subscription);
 
     with_gui(instance->gui, {
         dialog_free(data->front_dialog);
@@ -84,6 +105,12 @@ static bool system_settings_scene_shut_down_confirm_on_event(
             system_settings_pop_location(instance);
             consumed = scene_manager_search_and_switch_to_previous_scene(
                 instance->scene_manager, SceneIdPowerMenu);
+        } else if(event->event == SceneEventPowerUsbConnectionEvent) {
+            if(power_is_usb_connected(instance->power)) {
+                scene_manager_replace_current_scene(
+                    instance->scene_manager, SceneIdPowerUnplugUsb);
+            }
+            consumed = true;
         }
     } else if(event->type == SceneManagerEventTypeBack) {
         system_settings_pop_location(instance);
