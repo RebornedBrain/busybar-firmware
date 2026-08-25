@@ -5,10 +5,6 @@
 
 #include <gui/modules/status_view.h>
 
-typedef enum {
-    SceneEventPowerUsbConnectionEvent = AppEventSceneEventsStart,
-} SceneEvent;
-
 typedef struct {
     StatusView* statuses[GuiDisplayIdMax];
     FuriPubSubSubscription* power_subscription;
@@ -22,7 +18,7 @@ static void system_settings_scene_power_usb_event_callback(const void* message, 
     SystemSettings* instance = context;
 
     if(event->type == PowerEventUsbConnectionStateUpdate) {
-        system_settings_send_custom_event(instance, SceneEventPowerUsbConnectionEvent);
+        system_settings_send_custom_event(instance, AppEventPowerUsbConnectionEvent);
     }
 }
 
@@ -80,7 +76,7 @@ static bool
     bool consumed = false;
 
     if(event->type == SceneManagerEventTypeCustom) {
-        if(event->event == SceneEventPowerUsbConnectionEvent) {
+        if(event->event == AppEventPowerUsbConnectionEvent) {
             if(!power_is_usb_connected(instance->power)) {
                 scene_manager_replace_current_scene(
                     instance->scene_manager, SceneIdPowerShutDownConfirm);

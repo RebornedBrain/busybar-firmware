@@ -5,7 +5,6 @@
 typedef enum {
     SceneEventConfirm = AppEventSceneEventsStart,
     SceneEventCancel,
-    SceneEventPowerUsbConnectionEvent,
 } SceneEvent;
 
 typedef struct {
@@ -32,7 +31,7 @@ static void
     SystemSettings* instance = context;
 
     if(event->type == PowerEventUsbConnectionStateUpdate) {
-        system_settings_send_custom_event(instance, SceneEventPowerUsbConnectionEvent);
+        system_settings_send_custom_event(instance, AppEventPowerUsbConnectionEvent);
     }
 }
 
@@ -105,7 +104,7 @@ static bool system_settings_scene_shut_down_confirm_on_event(
             system_settings_pop_location(instance);
             consumed = scene_manager_search_and_switch_to_previous_scene(
                 instance->scene_manager, SceneIdPowerMenu);
-        } else if(event->event == SceneEventPowerUsbConnectionEvent) {
+        } else if(event->event == AppEventPowerUsbConnectionEvent) {
             if(power_is_usb_connected(instance->power)) {
                 scene_manager_replace_current_scene(
                     instance->scene_manager, SceneIdPowerUnplugUsb);
