@@ -93,11 +93,11 @@ static bool system_settings_scene_shut_down_confirm_on_event(
             FrontDisplaySrv* front_display = furi_record_open(RECORD_FRONT_DISPLAY);
             front_display_sleep_mode(front_display, true);
             bool power_off_success = power_off(instance->power);
-
             if(!power_off_success) {
                 front_display_sleep_mode(front_display, false);
-                system_settings_pop_location(instance);
-                consumed = scene_manager_previous_scene(instance->scene_manager);
+                scene_manager_replace_current_scene(
+                    instance->scene_manager, SceneIdPowerUnplugUsb);
+                consumed = true;
             }
             furi_record_close(RECORD_FRONT_DISPLAY);
         } else if(event->event == SceneEventCancel) {
