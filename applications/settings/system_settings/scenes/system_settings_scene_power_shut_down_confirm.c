@@ -92,6 +92,7 @@ static bool system_settings_scene_shut_down_confirm_on_event(
         if(event->event == SceneEventConfirm) {
             FrontDisplaySrv* front_display = furi_record_open(RECORD_FRONT_DISPLAY);
             front_display_sleep_mode(front_display, true);
+            furi_delay_ms(100);
             bool power_off_success = power_off(instance->power);
             if(!power_off_success) {
                 front_display_sleep_mode(front_display, false);
