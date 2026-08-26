@@ -8,7 +8,7 @@ paths:
       tags:
         - Smart Home
       summary: Smart home commissioning status
-      description: Retrieves current Smart Home connection status
+      description: Retrieves the number of commissioned fabrics and the latest smart home pairing status
       operationId: getSmartHomeCommissioningStatus
       parameters: []
       responses:
@@ -42,7 +42,7 @@ paths:
       tags:
         - Smart Home
       summary: Erase all smart home links
-      description: Removes all existing smart home pairings (fabrics) from the device. Requires a device reboot to apply
+      description: Removes all existing smart home pairings (fabrics) and automatically reboots the device to apply the reset
       parameters: []
       responses:
         "200":
@@ -82,7 +82,7 @@ paths:
       tags:
         - Smart Home
       summary: Set state of emulated smart home switch
-      description: Updates the state for the emulated smart home switch
+      description: Updates the current state and/or startup mode of the emulated smart home switch
       parameters: []
       requestBody:
         required: true
