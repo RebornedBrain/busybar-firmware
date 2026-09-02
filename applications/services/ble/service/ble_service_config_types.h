@@ -23,7 +23,7 @@ typedef enum {
 } BleServiceInitMethod;
 
 typedef bool (*BleServiceInit)(void* instance);
-typedef bool (*BleServiceRun)(void* instance);
+typedef bool (*BleServiceRun)(void* instance, size_t data_size, const void* data);
 
 typedef struct {
     uint16_t intercom_index;
