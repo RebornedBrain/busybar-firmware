@@ -50,8 +50,10 @@ bool ble_service_generic_access_init(void* object) {
     return true;
 }
 
-bool ble_service_generic_access_run(void* object) {
+bool ble_service_generic_access_run(void* object, size_t data_size, const void* data) {
     furi_assert(object);
+    UNUSED(data_size);
+    UNUSED(data);
     BleServiceObject* instance = object;
 
     ble_service_generic_access_update_device_name_char(instance);

@@ -91,7 +91,7 @@ static bool ble_service_command_handler_run(
 
     bool result = false;
     do {
-        if(instance->config->run && !instance->config->run(instance)) {
+        if(instance->config->run && !instance->config->run(instance, data_size, data)) {
             BLE_LOG_W("%s - run error", instance->config->name);
             break;
         }
