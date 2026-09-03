@@ -10,8 +10,6 @@
 #include <wifi/wifi.h>
 #include <usb_network/usb_network.h>
 
-#include <furi_hal_version.h>
-
 #define TAG "Discovery"
 
 #define DISCOVERY_API_TIMEOUT_TICKS (1000)
@@ -26,7 +24,7 @@ typedef struct {
     void* context;
 } DiscoveryService;
 
-ARRAY_DEF(DiscoveryServiceArray, DiscoveryService, M_POD_OPLIST)
+ARRAY_DEF(DiscoveryServiceArray, DiscoveryService*, M_PTR_OPLIST)
 #define M_OPL_DiscoveryServiceArray_t() ARRAY_OPLIST(DiscoveryServiceArray, M_POD_OPLIST)
 
 typedef enum {
@@ -52,8 +50,6 @@ struct Discovery {
     FuriMessageQueue* api_queue;
     struct netif* netifs[NetworkNetifCount];
     FuriString* device_name;
-    FuriString* device_service_name;
-    DiscoveryServiceInfo device_service_info;
     DiscoveryServiceArray_t services;
     WifiState wifi_state;
 };
@@ -120,13 +116,22 @@ static void discovery_mdns_txt_callback(struct mdns_service* lwip_srv, void* con
     DiscoveryService* service = context;
     const DiscoveryServiceInfo* info = service->info;
 
-    if(info->txt_callback) {
+    if(!info->txt_callback) return;
+
+    size_t index = 0;
+    bool record_valid = true;
+
+    while(record_valid) {
         FuriString* txt = furi_string_alloc();
 
-        info->txt_callback(txt, service->context);
-        mdns_resp_add_service_txtitem(lwip_srv, furi_string_get_cstr(txt), furi_string_size(txt));
+        record_valid = info->txt_callback(index, txt, service->context);
+        if(record_valid) {
+            mdns_resp_add_service_txtitem(
+                lwip_srv, furi_string_get_cstr(txt), furi_string_size(txt));
+        }
 
         furi_string_free(txt);
+        index++;
     }
 }
 
@@ -189,7 +194,7 @@ static void discovery_netif_up(Discovery* discovery, NetworkNetif netif_id) {
 
         /* clang-format off */
         for M_EACH(service, discovery->services, DiscoveryServiceArray_t) {
-            discovery_bind_service_to_netif(service, netif);
+            discovery_bind_service_to_netif(*service, netif);
         }
         /* clang-format on */
 
@@ -206,8 +211,10 @@ static void discovery_netif_up(Discovery* discovery, NetworkNetif netif_id) {
 
 static void
     discovery_add_service_handler(Discovery* discovery, const DiscoveryApiMessage* api_message) {
-    DiscoveryService* service = DiscoveryServiceArray_push_new(discovery->services);
+    DiscoveryService* service = malloc(sizeof(DiscoveryService));
     *service = api_message->service_to_add;
+
+    DiscoveryServiceArray_push_back(discovery->services, service);
 
     LOCK_TCPIP_CORE();
 
@@ -232,12 +239,12 @@ static void
         return;
     }
 
-    furi_string_set(discovery->device_name, new_device_name);
-
     FuriString* hostname_buf = furi_string_alloc();
     const char* hostname = discovery_device_name_to_hostname(new_device_name, hostname_buf);
 
     LOCK_TCPIP_CORE();
+
+    furi_string_set(discovery->device_name, new_device_name);
 
     for(size_t i = 0; i < COUNT_OF(discovery->netifs); i++) {
         struct netif* netif = discovery->netifs[i];
@@ -365,34 +372,6 @@ static void discovery_subscribe_to_network_state(Discovery* discovery) {
         usb_network_get_state(usb_network), discovery_usb_network_state_callback, discovery);
 }
 
-static void discovery_busybar_txt(FuriString* txt_out, void* context) {
-    furi_assert(context);
-    Discovery* discovery = context;
-
-    furi_string_printf(txt_out, "name=%s", furi_string_get_cstr(discovery->device_name));
-}
-
-static void discovery_add_device_service(Discovery* discovery) {
-    const uint8_t* usb_mac = furi_hal_version_get_usb_mac();
-
-    FuriString* device_service_name = discovery->device_service_name;
-    furi_string_reserve(device_service_name, FURI_HAL_VERSION_MAC_LENGTH * 2);
-
-    for(size_t i = 0; i < FURI_HAL_VERSION_MAC_LENGTH; i++) {
-        furi_string_cat_printf(device_service_name, "%02hhx", usb_mac[i]);
-    }
-
-    discovery->device_service_info = (const DiscoveryServiceInfo){
-        .name = furi_string_get_cstr(device_service_name),
-        .service = "_busybar",
-        .txt_callback = discovery_busybar_txt,
-        .transport_type = DiscoveryTransportTypeTcp,
-        .port = 0,
-    };
-
-    furi_check(discovery_add_service(discovery, &discovery->device_service_info, discovery));
-}
-
 // ===============
 // Service startup
 // ===============
@@ -404,7 +383,6 @@ static Discovery* discovery_alloc(void) {
     discovery->api_queue =
         furi_message_queue_alloc(DISCOVERY_API_QUEUE_SIZE, sizeof(DiscoveryApiMessage));
     discovery->device_name = furi_string_alloc();
-    discovery->device_service_name = furi_string_alloc();
 
     DiscoveryServiceArray_init(discovery->services);
 
@@ -419,8 +397,6 @@ static Discovery* discovery_alloc(void) {
 
     discovery_subscribe_to_device_name(discovery);
     discovery_subscribe_to_network_state(discovery);
-
-    discovery_add_device_service(discovery);
 
     furi_record_create(RECORD_DISCOVERY, discovery);
 
