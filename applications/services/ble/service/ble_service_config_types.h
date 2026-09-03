@@ -36,7 +36,7 @@ typedef bool (*BleServiceInit)(void* instance);
  * This method is called every time when BleServiceCommandRun is enqueued for
  * the service. Run can be enqueued as a reaction to some logic event happened
  * inside of a service. For example: Battery service has got an event regarding 
- * battery charge level from Power subsytem.
+ * battery charge level from Power subsystem.
  * @param[in] instance pointer to BleServiceObject in a generic form
  * @return true when run is done, otherwise false
  */
@@ -55,7 +55,7 @@ typedef struct {
 #endif
     uint8_t initial_data_size; /**< Set size of data buffer*/
 
-    const char* name; /** Name for identification and logging */
+    const char* name; /**< Name for identification and logging */
 } BleCharacteristicConfig;
 
 /**
@@ -70,8 +70,9 @@ typedef struct {
     uint8_t char_count; /**< Amount of characteristics inside this service */
 
     const BleCharacteristicConfig* char_configs; /**< Config per each characteristic */
-    const char* name; /** Name for identification and logging */
+    const char* name; /**< Name for identification and logging */
 
-    BleServiceInit init; /** Init callback, must return true in order to init service successfully */
-    BleServiceRun run; /** Run callback, must return true in order to run service successfully  */
+    BleServiceInit
+        init; /**< Init callback, must return true in order to init service successfully */
+    BleServiceRun run; /**< Run callback, must return true in order to run service successfully  */
 } BleServiceConfig;

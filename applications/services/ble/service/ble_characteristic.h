@@ -52,8 +52,8 @@ size_t ble_characteristic_get_data_size(BleCharacteristicObject* instance);
 
 /**
  * @brief Set data to characteristic.
- * After calling this method, parent service will take care of
- * transmission data to another side.
+ * This marks the characteristic as locally modified. The caller must enqueue
+ * parent service processing, or use ble_service_write_data(), to transmit the data.
  * @param[in] instance pointer to characteristic instance
  * @param[in] data pointer to buffer with new data
  * @param[in] data_size size of new data
@@ -66,7 +66,7 @@ void ble_characteristic_set_data(
 /**
  * @brief Get characteristic modification status.
  * Characteristic can be modified from both sides
- * Locally - when this size stores data to characteristic for further transmission
+ * Locally - when this side stores data to characteristic for further transmission
  * Remote - when new data were received from other side via intercom
  * @param[in] instance pointer to characteristic instance
  * @return true if modified, otherwise false
