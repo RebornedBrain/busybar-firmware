@@ -27,6 +27,8 @@ grpcio-tools = "^1.80.0"
 paho-mqtt = ">=2.0"
 PyYAML = "^6.0"
 websocket-client = "^1.9.0"
+zeroconf = "^0.150.0"
+cryptography = ">=44,<47"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.0.0"
@@ -57,10 +59,12 @@ markers = [
     "state_publisher: marks state publisher transport/protobuf tests",
     "uses_ble: marks tests that require BLE adapter/hardware path",
     "matter: marks tests that require a Matter controller (Home Assistant)",
+    "mdns: marks tests that validate multicast DNS discovery",
     "rate_limiter: marks state publisher rate limiter tests",
     "long_running: marks long-running hardware regression tests",
     "regression: marks heavy regression tests",
     "uses_si917: marks tests that exercise the Si917 coprocessor",
+    "mtls: marks mutual TLS authentication tests",
     "asyncio: marks tests as async tests",
     "story_commands_check: marks tests for commands check story",
     "story_ui_validation: marks tests for UI validation story",

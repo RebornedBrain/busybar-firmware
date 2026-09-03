@@ -19,6 +19,14 @@ paths:
             pattern: "^/ext(/[a-zA-Z0-9._\\-]*)*$"
           description: Path for the uploaded file
           example: "/ext/test.png"
+        - name: append
+          in: query
+          required: false
+          schema:
+            type: integer
+            enum: [0, 1]
+          description: Append to the file instead of replacing it (0 - replace (default), 1 - append; the file is created if it does not exist)
+          example: 1
       requestBody:
         required: true
         content:
@@ -90,6 +98,7 @@ paths:
       tags:
         - Storage
       summary: List files on internal storage
+      description: Returns a list of all files and directories located inside the specified storage path
       operationId: listStorageFiles
       parameters:
         - name: path
@@ -217,6 +226,7 @@ paths:
       tags:
         - Storage
       summary: Show storage usage
+      description: Retrieves information about storage partition capacity, including total, used, and free space in bytes
       operationId: getStorageStatus
       responses:
         "200":

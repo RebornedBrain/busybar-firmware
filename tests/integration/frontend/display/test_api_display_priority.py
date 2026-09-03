@@ -45,13 +45,11 @@ from clients.api import StreamingAPI
 from clients.api.assets import (
     AssetsAPI,
     LOADER_MAX_PRIORITY,
-    LOADER_DEFAULT_APP_PRIORITY,
     LOADER_MAX_APP_PRIORITY,
-    LOADER_STUB_APP_PRIORITY,
     LOADER_PASSTHROUGH_PRIORITY,
     DEFAULT_ELEMENT_PRIORITY,
 )
-from clients.api.streaming import raw_to_png
+from clients.api.streaming import FRONT_DISPLAY_WIDTH, BackFrame, raw_to_png
 from utils.busy_timer import (
     WORK_CARD_UUID,
     next_timestamp,
@@ -139,17 +137,12 @@ def _set_busy_snapshot(
         )
 
 
-def _back_pixel(data: bytes, x: int, y: int) -> int:
-    idx = y * 160 + x
-    byte = data[idx // 2]
-    return byte & 0x0F if idx % 2 == 0 else (byte >> 4) & 0x0F
-
-
 def _back_region_pixels(
     data: bytes, region: tuple[int, int, int, int]
 ) -> tuple[int, ...]:
     x1, y1, x2, y2 = region
-    return tuple(_back_pixel(data, x, y) for y in range(y1, y2) for x in range(x1, x2))
+    frame = BackFrame(data)
+    return tuple(frame.pixel(x, y) for y in range(y1, y2) for x in range(x1, x2))
 
 
 def _pixel_distance(left: tuple[int, ...], right: tuple[int, ...]) -> int:
@@ -169,7 +162,7 @@ def _nearest_avg_distance(frame: bytes, references: list[bytes]) -> float:
 
 
 def _front_region(frame: bytes, region: tuple[int, int, int, int]) -> bytes:
-    width = 72
+    width = FRONT_DISPLAY_WIDTH
     x1, y1, x2, y2 = region
 
     roi = bytearray()

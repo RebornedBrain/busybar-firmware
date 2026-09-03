@@ -16,7 +16,7 @@ on:
       target:
         required: false
         type: string
-        default: '21'
+        default: '22'
       marker_filter:
         required: false
         type: string
@@ -49,7 +49,7 @@ on:
         description: 'Hardware target'
         required: false
         type: string
-        default: '21'
+        default: '22'
 
 permissions:
   contents: read
@@ -58,7 +58,7 @@ permissions:
   id-token: write
 
 env:
-  U5_HW_TARGET: ${{ inputs.target || '21' }}
+  U5_HW_TARGET: ${{ inputs.target || '22' }}
   FIRMWARE_BASE_URL: https://update.busy.app/builds/busybar-firmware
   PYTEST_FAILED_TEST_RETRIES: 1
 
@@ -156,12 +156,9 @@ jobs:
       - name: 'Flash firmware'
         id: flashing
         timeout-minutes: 20
-        run: |
-          set -euo pipefail
-          source scripts/toolchain/fbtenv.sh
-          python3 scripts/testops.py format --no-confirm
-          python3 scripts/testops.py update-fw busybar-f${{ env.U5_HW_TARGET }}-update.tgz -r 3 --connect-timeout 10
-          python3 scripts/testops.py wait -t 260
+        uses: ./.github/actions/flash-device
+        with:
+          bundle: busybar-f${{ env.U5_HW_TARGET }}-update.tgz
 
       - name: 'Sanity check after flashing'
         if: steps.flashing.outcome == 'success'
@@ -169,6 +166,10 @@ jobs:
           set -euo pipefail
           source scripts/toolchain/fbtenv.sh
           python3 scripts/testops.py sanity
+          {
+            echo "U5_ELF=/_work/elf/busybar-f${{ env.U5_HW_TARGET }}-firmware.elf"
+            echo "SI917_ELF=/_work/elf/busybar-f${{ env.U5_HW_TARGET }}-sil_firmware.elf"
+          } >> "$GITHUB_ENV"
 
       - name: Set up Python 3.12
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -257,7 +258,7 @@ jobs:
         continue-on-error: true
         uses: allure-framework/setup-allurectl@2d89ee0b7ba2f59dbe9849b6df5763cab78e14db # v1.0.3
         with:
-          allure-endpoint: ${{ secrets.ALLURE_TESTOPS_URL }}
+          allure-endpoint: ${{ vars.ALLURE_TESTOPS_URL }}
           allure-token: ${{ secrets.ALLURE_TESTOPS_TOKEN }}
           allure-project-id: ${{ secrets.ALLURE_PROJECT_ID }}
 
@@ -269,14 +270,14 @@ jobs:
         run: |
           cd tests
           OUTPUT=$(allurectl upload allure-results \
-            --endpoint "${{ secrets.ALLURE_TESTOPS_URL }}" \
+            --endpoint "${{ vars.ALLURE_TESTOPS_URL }}" \
             --token "${{ secrets.ALLURE_TESTOPS_TOKEN }}" \
             --project-id "${{ secrets.ALLURE_PROJECT_ID }}" \
             --launch-name "BSB Firmware - Integration Tests - ${LAUNCH_BRANCH} - ${GITHUB_SHA::7}" 2>&1) || true
           echo "$OUTPUT"
           LAUNCH_ID=$(echo "$OUTPUT" | grep -oP 'Launch \[\K[0-9]+' | head -1)
           if [ -n "$LAUNCH_ID" ]; then
-            echo "allure_launch_url=${{ secrets.ALLURE_TESTOPS_URL }}/launch/$LAUNCH_ID" >> "$GITHUB_OUTPUT"
+            echo "allure_launch_url=${{ vars.ALLURE_TESTOPS_URL }}/launch/$LAUNCH_ID" >> "$GITHUB_OUTPUT"
           fi
 
       - name: 'Configure AWS CLI'

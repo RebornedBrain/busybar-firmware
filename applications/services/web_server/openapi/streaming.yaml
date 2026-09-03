@@ -12,6 +12,7 @@ paths:
         WebSocket connection for real-time device status and screen streaming.
         Upgrade from HTTP to WebSocket protocol is required.
         After connection, client must enable streaming by sending JSON: {"enable": true}
+      x-local-only: true
       operationId: connectWebSocket
       responses:
         "101":
@@ -28,6 +29,7 @@ paths:
       tags:
         - Streaming
       summary: Get single frame for requested screen
+      description: Captures and returns a single static image frame of the specified display (Front or Back)
       parameters:
         - name: display
           in: query
