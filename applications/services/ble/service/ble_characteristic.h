@@ -64,13 +64,6 @@ void ble_characteristic_set_data(
     const size_t data_size);
 
 /**
- * @brief Get service which this characteristic belongs to.
- * @param[in] instance pointer to characteristic instance
- * @return pointer to service instance
- */
-BleServiceObject* ble_characteristic_get_parent_service(BleCharacteristicObject* instance);
-
-/**
  * @brief Get characteristic modification status.
  * Characteristic can be modified from both sides
  * Locally - when this size stores data to characteristic for further transmission
