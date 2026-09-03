@@ -41,10 +41,6 @@ typedef struct {
 } WifiGetInfoMessage;
 
 typedef struct {
-    DeviceNameInfo device_name_info;
-} WifiSetHostnameMessage;
-
-typedef struct {
     WifiRequestType request_type;
     bool is_priority;
     WifiStatus* status;
@@ -52,7 +48,6 @@ typedef struct {
         WifiConnectMessage connect_message;
         WifiScanMessage scan_message;
         WifiGetInfoMessage get_info_message;
-        WifiSetHostnameMessage set_hostname_message;
     };
     FuriApiLock lock;
 } WifiMessage;
