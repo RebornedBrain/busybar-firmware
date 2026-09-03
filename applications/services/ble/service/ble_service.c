@@ -157,8 +157,13 @@ BleServiceObjectResult ble_service_process(BleServiceObjectMessage* message) {
         const BleIntercomFrameGeneric* frame = (BleIntercomFrameGeneric*)message->data;
         const BleIntercomFrameHeader* hdr = &frame->header;
 
-        ret.result = ble_service_target_execute(
-            instance, hdr->frame_type, hdr->command, hdr->data_size, frame->data);
+        if(hdr->result) {
+            ret.result = ble_service_target_execute(
+                instance, hdr->frame_type, hdr->command, hdr->data_size, frame->data);
+        } else {
+            ble_service_set_error(
+                instance, "Error, frame_type: %d, cmd: %d", hdr->frame_type, hdr->command);
+        }
 
         ble_service_unlock(instance);
     }
@@ -193,6 +198,7 @@ static void ble_service_enqueue_message(
 
     if(furi_message_queue_put(instance->message_queue, &msg, 100) != FuriStatusOk) {
         BLE_LOG_W("%s - unable to enqueue for processing", instance->config->name);
+        free(msg);
     }
 }
 

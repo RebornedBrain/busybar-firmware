@@ -8,12 +8,7 @@ static void ble_on_name_change_callback_state(const void* item, void* context) {
     BleServiceObject* instance = context;
 
     const DeviceNameInfo* device_name_info = item;
-
-    if(instance->ready) {
-        ble_service_enqueue_run_with_data(instance, DEVICE_NAME_MAX_SIZE, device_name_info);
-    } else {
-        BLE_LOG_W("%s - not ready, skip run", instance->config->name);
-    }
+    ble_service_enqueue_run_with_data(instance, DEVICE_NAME_MAX_SIZE, device_name_info);
 }
 
 static void ble_subscribe_on_name_change(BleServiceObject* instance) {

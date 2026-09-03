@@ -153,12 +153,6 @@ static void wifi_process_request(Wifi* instance) {
             wifi_net_down(instance);
             wifi_state_transition(instance, WifiStateUnknown);
             break; // No backend request necessary
-        } else if(request_type == WifiRequestTypeSetHostname) {
-            const WifiSetHostnameMessage* set_hostname_message = &message->set_hostname_message;
-            const char* new_hostname = set_hostname_message->device_name_info.name;
-
-            wifi_net_set_hostname(instance, new_hostname);
-            break; // No backend request necessary
         }
 
         status = wifi_send_request(instance, request_type);
