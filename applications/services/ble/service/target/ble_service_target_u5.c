@@ -86,8 +86,6 @@ static bool ble_service_command_handler_run(
     BLE_LOG_D("ble_service_command_handler_run");
 
     UNUSED(frame_type);
-    UNUSED(data_size);
-    UNUSED(data);
 
     bool result = false;
     do {

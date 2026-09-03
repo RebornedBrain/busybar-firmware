@@ -7,13 +7,19 @@
 #include <furi.h>
 
 typedef struct BleServiceObject BleServiceObject;
+typedef struct BleServiceObjectMessage BleServiceObjectMessage;
+
+typedef struct {
+    bool result;
+    BleServiceObject* service;
+} BleServiceObjectResult;
 
 BleServiceObject* ble_service_alloc(
     const BleServiceDescriptor* service_config,
     FuriMessageQueue* message_queue,
     IntercomChannel* intercom_ch);
 
-bool ble_service_process(BleServiceObject* instance);
+BleServiceObjectResult ble_service_process(BleServiceObjectMessage* instance);
 void ble_service_process_mailbox(
     BleServiceObject* instance,
     const BleIntercomFrameGeneric* input_frame);
