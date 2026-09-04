@@ -20,9 +20,12 @@ typedef struct BleServiceObject BleServiceObject;
  */
 typedef struct BleServiceObjectMessage BleServiceObjectMessage;
 
+/**
+ * @brief Represents service processing result
+ */
 typedef struct {
-    bool result;
-    BleServiceObject* service;
+    bool result; /**< processing result, true when processing is fine, otherwise false */
+    BleServiceObject* service; /**< pointer to processed service */
 } BleServiceObjectResult;
 
 /**
@@ -48,7 +51,7 @@ BleServiceObject* ble_service_alloc(
  * 3. Incoming frame was emulated in order to send command (init) to this service
  * 
  * @param[in] instance pointer to the BleServiceObjectMessage instance which is used internally
- * @returns true when processing was fine, otherwise false
+ * @returns BleServiceObjectResult where information about service processing is stored
  */
 BleServiceObjectResult ble_service_process(BleServiceObjectMessage* instance);
 
