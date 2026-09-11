@@ -62,6 +62,14 @@ typedef struct JsRunnerAppInterval {
     uint32_t last_id;
 } JsRunnerAppInterval;
 
+typedef struct JsRunnerAppInput {
+    FuriPubSubSubscription* pubsub_subscription;
+    // jerry_value_t handlers[JsInputControlMax];
+    jerry_value_t listen_handler;
+    // FuriEventLoop* event_loop;
+    FuriMessageQueue* input_queue;
+} JsRunnerAppInput;
+
 typedef struct JsFetch JsFetch;
 ARRAY_DEF(FetchArray, JsFetch*, M_PTR_OPLIST);
 typedef struct JsRunnerAppFetch {
