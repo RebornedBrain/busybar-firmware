@@ -141,7 +141,7 @@ void js_runner_thread_context_free(void);
  * */
 void* js_runner_thread_context_get(void);
 
-/** @brief Get root path of the current JS app (folder containg entry point).
+/** @brief Get root path of the current JS app (folder containing entry point).
  * This function is used by jerryscript glue. */
 void js_runner_get_root_path(FuriString* path);
 
