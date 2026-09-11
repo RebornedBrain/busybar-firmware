@@ -136,15 +136,6 @@ static jerry_value_t unbind_event_handler(
     UNUSED(args_count);
 
     WITH_JS_RUNNER_APP(app, {
-        // if(jerry_value_is_function(app->input.listen_handler)) {
-        //     jerry_value_free(app->input.listen_handler);
-        //     app->input.listen_handler = 0;
-        // }
-
-        // FuriPubSub* input_events = furi_record_open(RECORD_INPUT_EVENTS);
-        // furi_pubsub_unsubscribe(input_events, app->input.pubsub_subscription);
-        // furi_record_close(RECORD_INPUT_EVENTS);
-        // app->input.pubsub_subscription = NULL;
         js_input_unbind(app);
         js_runner_app_stop_if_done(app);
     });
@@ -160,14 +151,10 @@ static jerry_value_t listen_event_handler(
     JS_CHECK_ARGS_COUNT(2);
 
     FuriString* type = js_string_to_furi_string(args[0]);
-    FURI_LOG_W(
-        TAG, "%s args_count: %ld type: %s", __func__, args_count, furi_string_get_cstr(type));
-
     if(!furi_string_equal_str(type, "input")) {
         furi_string_free(type);
         return jerry_throw_sz(JERRY_ERROR_TYPE, "Unknown event type");
     }
-
     furi_string_free(type);
 
     if(!jerry_value_is_function(args[1])) {
@@ -205,22 +192,10 @@ void js_runner_app_input_abort(JsRunnerAppInput* instance) {
     if(instance->pubsub_subscription == NULL) return;
 
     WITH_JS_RUNNER_APP(app, { js_input_unbind(app); });
-    // WITH_JS_RUNNER_APP(app, {
-    //     if(jerry_value_is_function(app->input.listen_handler)) {
-    //         jerry_value_free(app->input.listen_handler);
-    //         app->input.listen_handler = 0;
-    //     }
-
-    //     FuriPubSub* input_events = furi_record_open(RECORD_INPUT_EVENTS);
-    //     furi_pubsub_unsubscribe(input_events, instance->pubsub_subscription);
-    //     furi_record_close(RECORD_INPUT_EVENTS);
-    //     instance->pubsub_subscription = NULL;
-    // });
 }
 
 void js_runner_app_input_deinit(JsRunnerAppInput* instance) {
     furi_assert(instance);
-    FURI_LOG_W(TAG, "Deinit");
 
     furi_message_queue_free(instance->input_queue);
 }

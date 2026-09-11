@@ -64,9 +64,7 @@ typedef struct JsRunnerAppInterval {
 
 typedef struct JsRunnerAppInput {
     FuriPubSubSubscription* pubsub_subscription;
-    // jerry_value_t handlers[JsInputControlMax];
     jerry_value_t listen_handler;
-    // FuriEventLoop* event_loop;
     FuriMessageQueue* input_queue;
 } JsRunnerAppInput;
 
@@ -98,6 +96,7 @@ typedef struct JsRunnerApp {
     JsRunnerAppConsole console;
     JsRunnerAppInterval interval;
     JsRunnerAppFetch fetch;
+    JsRunnerAppInput input;
 } JsRunnerApp;
 
 typedef struct JsRunner {

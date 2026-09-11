@@ -1,6 +1,7 @@
 #include "js_runner_i.h"
 #include "js_fetch.h"
 #include "js_interval.h"
+#include "js_input.h"
 #include "js_console.h"
 #include "js_local_storage.h"
 
@@ -59,8 +60,13 @@ static bool has_active_interval(JsRunnerAppInterval* instance) {
     return !IntervalDict_empty_p(instance->intervals);
 }
 
+static bool has_active_input(JsRunnerAppInput* input) {
+    return input->pubsub_subscription != NULL;
+}
+
 static bool app_has_background_tasks(JsRunnerApp* app) {
-    return has_active_interval(&app->interval) || has_active_fetch(&app->fetch);
+    return has_active_interval(&app->interval) || has_active_fetch(&app->fetch) ||
+           has_active_input(&app->input);
 }
 
 void js_runner_app_stop_if_done(JsRunnerApp* app) {
@@ -165,6 +171,7 @@ static void js_runner_app_init(
     js_runner_app_console_init(&app->console, console_out_cb, console_cb_context);
     js_runner_app_interval_init(&app->interval);
     js_runner_app_fetch_init(&app->fetch);
+    js_runner_app_input_init(&app->input);
     furi_event_loop_subscribe_message_queue(
         app->event_loop,
         app->fetch.event_queue,
@@ -181,11 +188,14 @@ static void js_runner_app_init(
 static void js_runner_app_deinit(JsRunnerApp* app) {
     JS_TRACE("app deinit");
     furi_string_free(app->app_id);
+
+    furi_event_loop_maybe_unsubscribe(app->event_loop, app->input.input_queue);
     furi_event_loop_unsubscribe(app->event_loop, app->command_queue);
     furi_message_queue_free(app->command_queue);
     furi_event_loop_unsubscribe(app->event_loop, app->fetch.event_queue);
     furi_event_loop_free(app->event_loop);
     furi_string_free(app->root_path);
+    js_runner_app_input_deinit(&app->input);
     js_runner_app_interval_deinit(&app->interval);
     js_runner_app_fetch_deinit(&app->fetch);
 }
@@ -326,6 +336,7 @@ JsRunnerError js_runner_run(
         }
         js_setup_console(&app.console);
         js_setup_interval_methods();
+        js_setup_input_methods();
         js_setup_fetch();
         js_setup_local_storage();
 
@@ -407,6 +418,10 @@ static void abort_intervals(JsRunnerApp* app) {
     }
 }
 
+static void abort_inputs(JsRunnerApp* app) {
+    js_runner_app_input_abort(&app->input);
+}
+
 static void abort_cmd_handler(JsRunnerApp* app, JsRunnerAppCommandType cmd) {
     furi_check(cmd == JsRunnerAppCommandTypeAbort);
     app_terminate_from_app_thread(app);
@@ -415,6 +430,7 @@ static void abort_cmd_handler(JsRunnerApp* app, JsRunnerAppCommandType cmd) {
 
 static void app_terminate_from_app_thread(JsRunnerApp* app) {
     app->should_terminate = true;
+    abort_inputs(app);
     abort_fetches(&app->fetch);
     abort_intervals(app);
 }
