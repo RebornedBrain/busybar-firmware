@@ -101,8 +101,8 @@ static void js_input_queue_handler(FuriEventLoopObject* object, void* context) {
 
     if(jerry_value_is_exception(js_result)) {
         js_log_exception(TAG, "Exception", js_result);
-        js_run_jobs();
     }
+    js_run_jobs();
     jerry_value_free(js_result);
     jerry_value_free(js_event);
 }
