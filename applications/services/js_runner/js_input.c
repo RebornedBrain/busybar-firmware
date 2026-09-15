@@ -49,6 +49,10 @@ static bool js_input_control_from_event(const InputEvent* event, JsInputControl*
     }
 }
 
+static inline bool js_input_listener_attached(JsRunnerAppInput* input) {
+    return input->listen_handler != 0;
+}
+
 static void input_event_handler(const void* message, void* context) {
     const InputEvent* event = message;
     JsRunnerApp* app = context;
@@ -97,6 +101,7 @@ static void js_input_queue_handler(FuriEventLoopObject* object, void* context) {
 
     if(jerry_value_is_exception(js_result)) {
         js_log_exception(TAG, "Exception", js_result);
+        js_run_jobs();
     }
     jerry_value_free(js_result);
     jerry_value_free(js_event);
@@ -116,7 +121,8 @@ static void js_input_subscribe_to_events(JsRunnerApp* app) {
 }
 
 static void js_input_unbind(JsRunnerApp* app) {
-    if(jerry_value_is_function(app->input.listen_handler)) {
+    if(js_input_listener_attached(&app->input) &&
+       jerry_value_is_function(app->input.listen_handler)) {
         jerry_value_free(app->input.listen_handler);
         app->input.listen_handler = 0;
     }
@@ -150,6 +156,10 @@ static jerry_value_t listen_event_handler(
     UNUSED(call_info_p);
     JS_CHECK_ARGS_COUNT(2);
 
+    if(!jerry_value_is_string(args[0])) {
+        return jerry_throw_sz(JERRY_ERROR_TYPE, "String expected in arg[0]");
+    }
+
     FuriString* type = js_string_to_furi_string(args[0]);
     if(!furi_string_equal_str(type, "input")) {
         furi_string_free(type);
@@ -162,8 +172,9 @@ static jerry_value_t listen_event_handler(
     }
 
     WITH_JS_RUNNER_APP(app, {
-        if(jerry_value_is_function(app->input.listen_handler)) {
-            jerry_value_free(app->input.listen_handler);
+        if(js_input_listener_attached(&app->input) &&
+           jerry_value_is_function(app->input.listen_handler)) {
+            return jerry_throw_sz(JERRY_ERROR_TYPE, "Handler override is forbidden");
         }
 
         app->input.listen_handler = jerry_value_copy(args[1]);
