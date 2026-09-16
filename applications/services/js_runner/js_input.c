@@ -159,9 +159,8 @@ static jerry_value_t listen_event_handler(
     UNUSED(call_info_p);
     JS_CHECK_ARGS_COUNT(2);
 
-    if(!jerry_value_is_string(args[0])) {
-        return jerry_throw_sz(JERRY_ERROR_TYPE, "String expected in arg[0]");
-    }
+    JS_CHECK_ARG_IS_STRING(JS_ARG(0));
+    JS_CHECK_ARG_IS_FUNCTION(JS_ARG(1));
 
     FuriString* type = js_string_to_furi_string(args[0]);
     if(!furi_string_equal_str(type, "input")) {
@@ -169,10 +168,6 @@ static jerry_value_t listen_event_handler(
         return jerry_throw_sz(JERRY_ERROR_TYPE, "Unknown event type");
     }
     furi_string_free(type);
-
-    if(!jerry_value_is_function(args[1])) {
-        return jerry_throw_sz(JERRY_ERROR_TYPE, "Control handler must be a function");
-    }
 
     WITH_JS_RUNNER_APP(app, {
         if(js_input_listener_attached(&app->input) &&
