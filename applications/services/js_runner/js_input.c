@@ -107,7 +107,7 @@ static void js_input_queue_handler(FuriEventLoopObject* object, void* context) {
     jerry_value_free(js_event);
 }
 
-static void js_input_subscribe_to_events(JsRunnerApp* app) {
+static void js_input_listen(JsRunnerApp* app) {
     if(app->input.pubsub_subscription) {
         return;
     }
@@ -136,7 +136,7 @@ static void js_input_unbind(JsRunnerApp* app) {
     app->input.pubsub_subscription = NULL;
 }
 
-static jerry_value_t unbind_event_handler(
+static jerry_value_t unbind(
     const jerry_call_info_t* call_info_p,
     const jerry_value_t args[],
     const jerry_length_t args_count) {
@@ -152,7 +152,7 @@ static jerry_value_t unbind_event_handler(
     return jerry_undefined();
 }
 
-static jerry_value_t listen_event_handler(
+static jerry_value_t listen(
     const jerry_call_info_t* call_info_p,
     const jerry_value_t args[],
     const jerry_length_t args_count) {
@@ -176,16 +176,16 @@ static jerry_value_t listen_event_handler(
         }
 
         app->input.listen_handler = jerry_value_copy(JS_ARG(1));
-        js_input_subscribe_to_events(app);
+        js_input_listen(app);
     });
 
-    return jerry_function_external(unbind_event_handler);
+    return jerry_function_external(unbind);
 }
 
 void js_setup_input_methods(void) {
     jerry_value_t global_obj = jerry_current_realm();
 
-    js_set_method(global_obj, "listen", listen_event_handler);
+    js_set_method(global_obj, "listen", listen);
 
     jerry_value_free(global_obj);
 }
