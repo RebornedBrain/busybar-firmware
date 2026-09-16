@@ -162,7 +162,7 @@ static jerry_value_t listen_event_handler(
     JS_CHECK_ARG_IS_STRING(JS_ARG(0));
     JS_CHECK_ARG_IS_FUNCTION(JS_ARG(1));
 
-    FuriString* type = js_string_to_furi_string(args[0]);
+    FuriString* type = js_string_to_furi_string(JS_ARG(0));
     if(!furi_string_equal_str(type, "input")) {
         furi_string_free(type);
         return jerry_throw_sz(JERRY_ERROR_TYPE, "Unknown event type");
@@ -175,7 +175,7 @@ static jerry_value_t listen_event_handler(
             return jerry_throw_sz(JERRY_ERROR_TYPE, "Handler override is forbidden");
         }
 
-        app->input.listen_handler = jerry_value_copy(args[1]);
+        app->input.listen_handler = jerry_value_copy(JS_ARG(1));
         js_input_subscribe_to_events(app);
     });
 
