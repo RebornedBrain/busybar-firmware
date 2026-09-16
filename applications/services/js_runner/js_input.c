@@ -121,12 +121,15 @@ static void js_input_subscribe_to_events(JsRunnerApp* app) {
 }
 
 static void js_input_unbind(JsRunnerApp* app) {
-    if(js_input_listener_attached(&app->input) &&
-       jerry_value_is_function(app->input.listen_handler)) {
-        jerry_value_free(app->input.listen_handler);
-        app->input.listen_handler = 0;
+    if(!js_input_listener_attached(&app->input) ||
+       !jerry_value_is_function(app->input.listen_handler)) {
+        return;
     }
 
+    jerry_value_free(app->input.listen_handler);
+    app->input.listen_handler = 0;
+
+    furi_event_loop_unsubscribe(app->event_loop, app->input.input_queue);
     FuriPubSub* input_events = furi_record_open(RECORD_INPUT_EVENTS);
     furi_pubsub_unsubscribe(input_events, app->input.pubsub_subscription);
     furi_record_close(RECORD_INPUT_EVENTS);
