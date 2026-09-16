@@ -1,19 +1,19 @@
 let counter = 0;
 
-const unbind = listen('input', handler)
+const unbind = listen("input", handler)
 
 function handler(event) {
     switch (event.key) {
-        case 'ok':
+        case "ok":
             ok_handler(event)
             break;
-        case 'encoder':
+        case "encoder":
             encoder_handler(event)
             break;
-        case 'start':
+        case "start":
             start_handler(event)
             break;
-        case 'back':
+        case "back":
             unbind()
             break;
         default: break;
@@ -21,14 +21,14 @@ function handler(event) {
 }
 
 function encoder_handler(event) {
-    console.log('encoder dir:', event.action, 'delta: ', event.delta)
+    console.log("encoder dir:", event.action, "delta: ", event.delta)
     counter += event.delta
     setTimeout(displayText, 100)
 }
 
 function ok_handler(event) {
-    console.log('OK:', event.action)
-    if (event.action == 'release') {
+    console.log("OK:", event.action)
+    if (event.action == "release") {
         counter = 0
         setTimeout(displayText, 100)
     }
@@ -56,7 +56,7 @@ function displayText() {
                         "x": 72 / 2,
                         "y": 16 / 2,
                         "align": "center",
-                        "text": 'JS counter: ' + counter,
+                        "text": "JS counter: " + counter,
                         "font": "small"
                     }
                 ]
