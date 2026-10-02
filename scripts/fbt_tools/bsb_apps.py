@@ -61,7 +61,7 @@ def _js_app_get_release_data_by_version_or_latest(url, version):
     release_data = _js_app_get_release_data(url, version)
     if release_data is not None:
         if release_data.status_code == 404:
-            print(fg.brightyellow(f"WARNING: Trying latest version as a fallback")) 
+            print(fg.brightyellow("WARNING: Trying latest version as a fallback")) 
             release_data = _js_app_get_release_data(url, 'latest')
         
     if (release_data is None) or (release_data.status_code != 200):
@@ -83,13 +83,20 @@ def _js_app_json_read(source_path:str):
 
     return exists, url, version        
 
+def is_safe_path(base_dir, target_path):
+    abs_base = os.path.abspath(base_dir)
+    abs_target = os.path.abspath(os.path.join(base_dir, target_path))    
+    return os.path.commonpath([abs_base, abs_target]) == abs_base
+
 def _js_app_tar_extract(target_path, tar_content):
-    try:
-        tar = tarfile.open(name=None, fileobj=BytesIO(tar_content))
-        tar.extractall(target_path)
-        tar.close()
-    except IOError:
-        raise StopError(f"Failed to extract on path: {target_path}")
+    with tarfile.open(name=None, fileobj=BytesIO(tar_content)) as tar:
+        secure_members = []
+        for member in tar.getmembers():
+            if not is_safe_path("user_assets", member.name):
+                raise StopError("Failed to extract archive")
+            secure_members.append(member)
+
+        tar.extractall(target_path, members=secure_members)
 
 def _js_app_action(target, source, env):
     verbose = env["VERBOSE"]
