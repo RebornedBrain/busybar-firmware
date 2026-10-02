@@ -63,11 +63,16 @@ def _js_app_get_release_data_by_version_or_latest(url, version):
         if release_data.status_code == 404:
             print(fg.brightyellow("WARNING: Trying latest version as a fallback")) 
             release_data = _js_app_get_release_data(url, 'latest')
-        
+
     if (release_data is None) or (release_data.status_code != 200):
         raise StopError(f"Failed to get release data from {url}") 
 
     return release_data.json()
+
+def _js_app_json_validate(keys:list, expected_keys:list):
+    missing_keys = set(expected_keys) - set(keys)
+    if missing_keys:
+        raise StopError(f"Fields {list(missing_keys)} are missing in app.json")
 
 def _js_app_json_read(source_path:str):
     app_json_path = Path(source_path) / "app.json"
@@ -78,6 +83,8 @@ def _js_app_json_read(source_path:str):
     if exists:
         with open(app_json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
+
+            _js_app_json_validate(data.keys(),["url", "version"])
             url = data["url"]
             version = data["version"]
 
