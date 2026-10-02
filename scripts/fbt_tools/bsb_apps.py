@@ -91,15 +91,18 @@ def _js_app_json_read(source_path:str):
     return exists, url, version        
 
 def is_safe_path(base_dir, target_path):
-    abs_base = os.path.abspath(base_dir)
-    abs_target = os.path.abspath(os.path.join(base_dir, target_path))    
+    abs_base = os.path.realpath(base_dir)
+    abs_target = os.path.realpath(os.path.join(abs_base, target_path)) 
     return os.path.commonpath([abs_base, abs_target]) == abs_base
 
-def _js_app_tar_extract(target_path, tar_content):
+def _js_app_tar_extract(target_dir, tar_content):
+    target_path = os.path.realpath(target_dir.Dir("..").abspath)
     with tarfile.open(name=None, fileobj=BytesIO(tar_content)) as tar:
         secure_members = []
         for member in tar.getmembers():
-            if not is_safe_path("user_assets", member.name):
+            if member.issym() or member.islnk():
+                raise StopError("Symlinks and hard links are not allowed")
+            if not is_safe_path(target_path, member.name):
                 raise StopError("Failed to extract archive")
             secure_members.append(member)
 
@@ -132,8 +135,7 @@ def _js_app_action(target, source, env):
 
         if expected_hash == loaded_sha256:
             shutil.rmtree(target_path, ignore_errors=True)
-            target_path = target_dir.Dir("..").abspath
-            _js_app_tar_extract(target_path, artifact.content)
+            _js_app_tar_extract(target_dir, artifact.content)
         else:
            raise StopError(f"Release hash mismatch!\r\nExpect: {expected_hash}\n\rLoaded: {loaded_sha256}") 
     else:
