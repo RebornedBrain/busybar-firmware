@@ -55,28 +55,19 @@ def _js_app_get_release_data(url:str, version:str):
     api_url = _js_app_generate_github_api_url(url, version)
     if(api_url is None): return None
 
-    data = github_api_send_request(api_url)
-
-    if data is None:
-        return None
-
-    if data.status_code == 404:
-        print(fg.brightyellow(f"WARNING: Version {version} not found")) 
-        return None
-
-    elif data.status_code == 200:        
-        return data.json()
-    else: 
-        print(fg.brightyellow(f"WARNING: Failed to load release data for version: {version}")) 
-        return None
+    return github_api_send_request(api_url)
 
 def _js_app_get_release_data_by_version_or_latest(url, version):
     release_data = _js_app_get_release_data(url, version)
-    if release_data is not None: return release_data
+    if release_data is not None:
+        if release_data.status_code == 404:
+            print(fg.brightyellow(f"WARNING: Trying latest version as a fallback")) 
+            release_data = _js_app_get_release_data(url, 'latest')
+        
+    if (release_data is None) or (release_data.status_code != 200):
+        raise StopError(f"Failed to get release data from {url}") 
 
-    print(fg.brightyellow(f"WARNING: Trying latest version as a fallback")) 
-    release_data = _js_app_get_release_data(url, 'latest')
-    return release_data
+    return release_data.json()
 
 def _js_app_json_read(source_path:str):
     app_json_path = Path(source_path) / "app.json"
@@ -111,8 +102,6 @@ def _js_app_action(target, source, env):
     exists, url, version = _js_app_json_read(source_path)
     if(exists):
         release_data = _js_app_get_release_data_by_version_or_latest(url, version)
-        if release_data is None:
-            raise StopError(f"Failed to get release data from {url}") 
                     
         name = release_data['name']
         assets = release_data['assets'][0]  
