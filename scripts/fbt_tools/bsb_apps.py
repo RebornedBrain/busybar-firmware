@@ -112,7 +112,6 @@ def _js_app_action(target, source, env):
     
     source_path = source_dir.abspath
     target_path = target_dir.abspath
-
     exists, url, version = _js_app_json_read(source_path)
     if(exists):
         release_data = _js_app_get_release_data_by_version_or_latest(url, version)
@@ -143,7 +142,6 @@ def _js_app_action(target, source, env):
 
         shutil.copytree(source_path, target_path)
 
-
 def _js_app_emitter(target, source, env):
     assert len(target) == len(source)
 
@@ -158,7 +156,14 @@ def _js_app_emitter(target, source, env):
     # TODO: Fix wrong directory expansion
     source = [env.Dir("${PROJECT_ROOT}").Dir(source_dir.relpath)]
     source += env.GlobRecursive("*", source_dir)
-    
+
+    json_src_path = source[0].abspath
+    exists, url, version = _js_app_json_read(json_src_path)
+    if(exists):
+        release_data = _js_app_get_release_data_by_version_or_latest(url, version) 
+        version_node = env.Value(release_data['name'])
+        source.append(version_node)
+
     target = [target_dir.File("appmeta/manifest.json")]
     return (target, source)
 
