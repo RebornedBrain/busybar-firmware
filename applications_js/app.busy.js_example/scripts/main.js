@@ -30,7 +30,7 @@ function ok_handler(event) {
     console.log("OK:", event.action)
     if (event.action == "release") {
         counter = 0
-        setTimeout(displayText, 100)
+        setTimeout(changeName, 500);
     }
 }
 
@@ -40,6 +40,19 @@ function start_handler(event) {
         counter = 0
         setTimeout(displayText, 100)
     }
+}
+
+function changeName() {
+    const request = new Request(
+        "http://127.0.0.1/api/name",
+        {
+            method: "POST",
+            body: JSON.stringify({
+                "name": "NewBarName"
+            })
+        });
+
+    fetch(request);
 }
 
 function displayText() {
