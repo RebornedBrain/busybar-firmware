@@ -128,13 +128,21 @@ void http_api_log_access(struct mg_connection* conn, struct mg_http_message* msg
 #define ACCESS_KEY_LEN_MAX 10
 
 // Always accessible API endpoints
-static const struct {
+typedef struct {
     const char* uri;
     HttpMethod method;
-} api_access_whitelist[] = {
+} HttpApiAccess;
+
+static const HttpApiAccess api_access_whitelist[] = {
     {"version", HttpMethodGet},
     {"access", HttpMethodGet},
     {"transport", HttpMethodGet},
+};
+
+static const HttpApiAccess js_apps_api_blacklist[] = {
+    {"storage", HttpMethodPost},
+    {"storage", HttpMethodDelete},
+    {"name", HttpMethodPost},
 };
 
 typedef struct {
@@ -295,6 +303,23 @@ static HttpApiAccessStatusEx http_api_access_status(
             status_ex.status = HttpApiAccessStatusGranted;
             break;
         }
+
+        struct mg_str* request_key = mg_http_get_header(msg, "app_name");
+        if(request_key) {
+            char* str = malloc(request_key->len + 1);
+            memcpy(str, request_key->buf, request_key->len);
+            FURI_LOG_W(TAG, "sz: %d, app_name: %s", request_key->len, str);
+            free(str);
+            for(size_t i = 0; i < COUNT_OF(js_apps_api_blacklist); i++) {
+                if(furi_string_equal(path, js_apps_api_blacklist[i].uri) &&
+                   (method & js_apps_api_blacklist[i].method)) {
+                    status_ex.status = HttpApiAccessStatusDenied;
+                    FURI_LOG_W(TAG, "%s - access denied", furi_string_get_cstr(path));
+                    break;
+                }
+            }
+        }
+        if(status_ex.status != HttpApiAccessStatusMax) break;
 
         for(size_t i = 0; i < COUNT_OF(api_access_whitelist); i++) {
             if(furi_string_equal(path, api_access_whitelist[i].uri) &&
