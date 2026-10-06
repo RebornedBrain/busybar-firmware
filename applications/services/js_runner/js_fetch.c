@@ -9,6 +9,7 @@
 #include <http/http_response.h>
 
 #define TAG                     "JsFetch"
+#define APP_NAME_HEADER         "app_name"
 #define FETCH_THREAD_STACK_SIZE (10 * 1024)
 
 #define IS_RUNNING(child) (instance->child.status == ChildStatusRunning)
@@ -39,6 +40,20 @@ static void fetch_request_free(FetchRequest* request) {
     if(request->body.data) {
         free((void*)request->body.data);
     }
+}
+
+static void
+    parse_request_append_app_name_header(FetchRequest* const request, const uint8_t header_index) {
+    furi_check(header_index != FETCH_HEADERS_COUNT_MAX);
+
+    FuriString* id_str = NULL;
+    WITH_JS_RUNNER_APP(app, { id_str = furi_string_alloc_set_str(js_runner_app_get_id(app)); });
+
+    const size_t extra_header_size = sizeof(APP_NAME_HEADER) + 2 + furi_string_size(id_str);
+    char* extra_header = malloc(extra_header_size);
+    sprintf(extra_header, "%s: %s", APP_NAME_HEADER, furi_string_get_cstr(id_str));
+    request->headers.data[header_index] = extra_header;
+    furi_string_free(id_str);
 }
 
 static RequestParseResult parse_request(jerry_value_t obj) {
@@ -103,6 +118,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
             jerry_value_t headers_val = jerry_object_get_sz(obj, "headers");
             // TODO instance of Headers
             if(jerry_value_is_object(headers_val)) {
+                bool app_header_appended = false;
                 jerry_value_t keys = jerry_object_keys(headers_val);
                 size_t num_keys = jerry_array_length(keys);
                 size_t header_idx = 0;
@@ -112,22 +128,33 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                     jerry_value_t value_conv = jerry_value_to_string(value);
                     if(jerry_value_is_string(key) && jerry_value_is_string(value_conv)) {
                         char* key_string = js_string_to_c_string(key);
-                        char* value_string = js_string_to_c_string(value_conv);
 
-                        char* header_string =
-                            malloc(strlen(key_string) + 2 + strlen(value_string) + 1);
-                        sprintf(header_string, "%s: %s", key_string, value_string);
+                        if(strcmp(key_string, APP_NAME_HEADER) == 0) {
+                            FURI_LOG_W(TAG, "%s header override", APP_NAME_HEADER);
+                            parse_request_append_app_name_header(&request, header_idx);
+                            app_header_appended = true;
+                        } else {
+                            char* value_string = js_string_to_c_string(value_conv);
+
+                            char* header_string =
+                                malloc(strlen(key_string) + 2 + strlen(value_string) + 1);
+                            sprintf(header_string, "%s: %s", key_string, value_string);
+                            free(value_string);
+                            request.headers.data[header_idx] = header_string;
+                        }
                         free(key_string);
-                        free(value_string);
-
-                        request.headers.data[header_idx] = header_string;
-
                         header_idx += 1;
                     }
                     jerry_value_free(key);
                     jerry_value_free(value);
                     jerry_value_free(value_conv);
                 }
+
+                if(!app_header_appended) {
+                    parse_request_append_app_name_header(&request, header_idx);
+                    header_idx += 1;
+                }
+
                 jerry_value_free(keys);
                 request.headers.count = header_idx;
             } else {
@@ -139,6 +166,9 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                 break;
             }
             jerry_value_free(headers_val);
+        } else {
+            parse_request_append_app_name_header(&request, 0);
+            request.headers.count = 1;
         }
 
         if(js_object_has_property(obj, "body")) {
