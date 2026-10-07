@@ -4,12 +4,12 @@
 #include "js_headers.h"
 #include "js_request.h"
 #include "js_response.h"
+#include "js_fetch_ext_header.h"
 
 #include <fetch/fetch.h>
 #include <http/http_response.h>
 
 #define TAG                     "JsFetch"
-#define APP_NAME_HEADER         "app_name"
 #define FETCH_THREAD_STACK_SIZE (10 * 1024)
 
 #define IS_RUNNING(child) (instance->child.status == ChildStatusRunning)
@@ -46,14 +46,12 @@ static void
     parse_request_append_app_name_header(FetchRequest* const request, const uint8_t header_index) {
     furi_check(header_index != FETCH_HEADERS_COUNT_MAX);
 
-    FuriString* id_str = NULL;
-    WITH_JS_RUNNER_APP(app, { id_str = furi_string_alloc_set_str(js_runner_app_get_id(app)); });
+    const size_t extra_header_size =
+        sizeof(JS_FETCH_EXTRA_HEADER) + sizeof(JS_FETCH_EXTRA_VALUE) + 1;
 
-    const size_t extra_header_size = sizeof(APP_NAME_HEADER) + 2 + furi_string_size(id_str);
     char* extra_header = malloc(extra_header_size);
-    sprintf(extra_header, "%s: %s", APP_NAME_HEADER, furi_string_get_cstr(id_str));
+    sprintf(extra_header, "%s: %s", JS_FETCH_EXTRA_HEADER, JS_FETCH_EXTRA_VALUE);
     request->headers.data[header_index] = extra_header;
-    furi_string_free(id_str);
 }
 
 static RequestParseResult parse_request(jerry_value_t obj) {
@@ -129,8 +127,8 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                     if(jerry_value_is_string(key) && jerry_value_is_string(value_conv)) {
                         char* key_string = js_string_to_c_string(key);
 
-                        if(strcmp(key_string, APP_NAME_HEADER) == 0) {
-                            FURI_LOG_W(TAG, "%s header override", APP_NAME_HEADER);
+                        if(strcmp(key_string, JS_FETCH_EXTRA_HEADER) == 0) {
+                            FURI_LOG_W(TAG, "%s header override", JS_FETCH_EXTRA_HEADER);
                             parse_request_append_app_name_header(&request, header_idx);
                             app_header_appended = true;
                         } else {
