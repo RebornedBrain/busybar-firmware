@@ -7,6 +7,7 @@
 #include <sysctl/sysctl.h>
 #include <api_tokens/api_tokens.h>
 #include <cjson/cJSON.h>
+#include <js_runner/js_fetch_ext_header.h>
 
 #define TAG "HttpApi"
 
@@ -127,22 +128,37 @@ void http_api_log_access(struct mg_connection* conn, struct mg_http_message* msg
 #define ACCESS_KEY_LEN_MIN 4
 #define ACCESS_KEY_LEN_MAX 10
 
-// Always accessible API endpoints
+typedef enum {
+    HttpApiAccessMatchTypeExact,
+    HttpApiAccessMatchTypePrefix
+} HttpApiAccessMatchType;
+
 typedef struct {
     const char* uri;
+    HttpApiAccessMatchType match_type;
     HttpMethod method;
 } HttpApiAccess;
 
+// Always accessible API endpoints
 static const HttpApiAccess api_access_whitelist[] = {
-    {"version", HttpMethodGet},
-    {"access", HttpMethodGet},
-    {"transport", HttpMethodGet},
+    {"version", HttpApiAccessMatchTypeExact, HttpMethodGet},
+    {"access", HttpApiAccessMatchTypeExact, HttpMethodGet},
+    {"transport", HttpApiAccessMatchTypeExact, HttpMethodGet},
 };
 
-static const HttpApiAccess js_apps_api_blacklist[] = {
-    {"storage", HttpMethodPost},
-    {"storage", HttpMethodDelete},
-    {"name", HttpMethodPost},
+static const HttpApiAccess js_apps_api_whitelist[] = {
+    {"apps/settings", HttpApiAccessMatchTypeExact, HttpMethodGet},
+    {"display/brightness", HttpApiAccessMatchTypeExact, HttpMethodGet | HttpMethodPost},
+    {"display/draw", HttpApiAccessMatchTypeExact, HttpMethodPost | HttpMethodDelete},
+    {"audio/play", HttpApiAccessMatchTypeExact, HttpMethodPost | HttpMethodDelete},
+    {"busy", HttpApiAccessMatchTypePrefix, HttpMethodGet | HttpMethodPut},
+    {"name", HttpApiAccessMatchTypeExact, HttpMethodGet},
+    {"volume", HttpApiAccessMatchTypePrefix, HttpMethodGet | HttpMethodPost},
+    {"time", HttpApiAccessMatchTypePrefix, HttpMethodGet},
+    {"wifi", HttpApiAccessMatchTypePrefix, HttpMethodGet},
+    {"version", HttpApiAccessMatchTypeExact, HttpMethodGet},
+    {"transport", HttpApiAccessMatchTypeExact, HttpMethodGet},
+    {"status", HttpApiAccessMatchTypePrefix, HttpMethodGet},
 };
 
 typedef struct {
@@ -287,6 +303,40 @@ static void http_api_access_set_callback(
     }
 }
 
+static HttpApiAccessStatus http_api_process_whitelist(
+    FuriString* path,
+    const HttpMethod method,
+    const HttpApiAccess* whitelist,
+    const size_t whitelist_count) {
+    HttpApiAccessStatus status = HttpApiAccessStatusMax;
+    for(size_t i = 0; i < whitelist_count; i++) {
+        const HttpApiAccess* item = &whitelist[i];
+        if(item->match_type == HttpApiAccessMatchTypeExact) {
+            if(furi_string_equal(path, item->uri) && (method & item->method)) {
+                status = HttpApiAccessStatusGrantedViaEndpointWhitelist;
+                break;
+            }
+        } else if(item->match_type == HttpApiAccessMatchTypePrefix) {
+            size_t pos = furi_string_search(path, item->uri);
+            if(pos == 0) {
+                size_t path_len = furi_string_size(path);
+                size_t template_len = strlen(item->uri);
+                if(path_len == template_len) {
+                    status = HttpApiAccessStatusGrantedViaEndpointWhitelist;
+                    break;
+                } else if(path_len > template_len) {
+                    char next_symbol = furi_string_get_char(path, template_len);
+                    if(next_symbol == '/') {
+                        status = HttpApiAccessStatusGrantedViaEndpointWhitelist;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return status;
+}
+
 static HttpApiAccessStatusEx http_api_access_status(
     ApiRootCtx* context,
     FuriString* path,
@@ -304,30 +354,24 @@ static HttpApiAccessStatusEx http_api_access_status(
             break;
         }
 
-        struct mg_str* request_key = mg_http_get_header(msg, "app_name");
+        struct mg_str* request_key = mg_http_get_header(msg, JS_FETCH_EXTRA_HEADER);
         if(request_key) {
             char* str = malloc(request_key->len + 1);
             memcpy(str, request_key->buf, request_key->len);
-            FURI_LOG_W(TAG, "sz: %d, app_name: %s", request_key->len, str);
+            bool is_js = strncmp(str, JS_FETCH_EXTRA_VALUE, request_key->len) == 0;
             free(str);
-            for(size_t i = 0; i < COUNT_OF(js_apps_api_blacklist); i++) {
-                if(furi_string_equal(path, js_apps_api_blacklist[i].uri) &&
-                   (method & js_apps_api_blacklist[i].method)) {
-                    status_ex.status = HttpApiAccessStatusDenied;
-                    FURI_LOG_W(TAG, "%s - access denied", furi_string_get_cstr(path));
-                    break;
-                }
-            }
-        }
-        if(status_ex.status != HttpApiAccessStatusMax) break;
 
-        for(size_t i = 0; i < COUNT_OF(api_access_whitelist); i++) {
-            if(furi_string_equal(path, api_access_whitelist[i].uri) &&
-               (method & api_access_whitelist[i].method)) {
-                status_ex.status = HttpApiAccessStatusGrantedViaEndpointWhitelist;
+            if(is_js) {
+                HttpApiAccessStatus status = http_api_process_whitelist(
+                    path, method, js_apps_api_whitelist, COUNT_OF(js_apps_api_whitelist));
+                status_ex.status = (status != HttpApiAccessStatusMax) ? status :
+                                                                        HttpApiAccessStatusDenied;
                 break;
             }
         }
+
+        status_ex.status = http_api_process_whitelist(
+            path, method, api_access_whitelist, COUNT_OF(api_access_whitelist));
         if(status_ex.status != HttpApiAccessStatusMax) break;
 
         uint8_t* ip = conn->rem.addr.ip;
