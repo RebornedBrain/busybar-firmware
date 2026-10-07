@@ -311,14 +311,6 @@ static void js_runner_app_set_root_path(JsRunnerApp* app, const char* script_pat
     }
 }
 
-void js_runner_byte_array_destructor(void* object, void* user_p) {
-    UNUSED(object);
-    JsRunnerByteArrayDestructor* destructor = user_p;
-    ByteArray_clear(*destructor->byte_array);
-    free(destructor->byte_array);
-    free(destructor);
-}
-
 void js_runner_heap_destructor(void* object, void* user_p) {
     UNUSED(user_p);
     free(object);
@@ -331,12 +323,14 @@ static void arraybuffer_free_callback(
     void* arraybuffer_user_p,
     void* user_p) {
     UNUSED(buffer_type);
-    UNUSED(buffer_size);
     UNUSED(user_p);
     JS_TRACE("free arraybuffer");
-    if(arraybuffer_user_p) {
-        JsRunnerExternalDataDestructor destructor = arraybuffer_user_p;
-        destructor(buffer_p, arraybuffer_user_p);
+    if(arraybuffer_user_p != NULL) {
+        JsRunnerArrayBufferInfo* info = arraybuffer_user_p;
+        info->destructor(info->data);
+        free(info);
+    } else {
+        jerry_heap_free(buffer_p, buffer_size);
     }
 }
 
@@ -505,7 +499,8 @@ static JsRunnerExecutionHandle* execution_handle_alloc(
     handle->context_handle = parent;
     handle->event_callback = event_callback;
     handle->event_callback_context = context;
-    parent->app->execution_handle = handle;
+    handle->app->execution_handle = handle;
+    handle->app->should_terminate = false;
     return handle;
 }
 
@@ -601,7 +596,6 @@ JsRunnerError js_runner_join(JsRunnerExecutionHandle* handle, uint32_t timeout) 
 
     JsRunnerError result = JsRunnerErrorNone;
     if(wait_result == JS_RUNNER_APP_FLAG_IDLE) {
-        handle->app->should_terminate = false;
         execution_handle_free(handle);
     } else if((FuriStatus)wait_result == FuriStatusErrorTimeout) {
         result = JsRunnerErrorTimeout;

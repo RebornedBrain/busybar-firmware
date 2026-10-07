@@ -107,6 +107,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "409":
+          description: A higher-priority application is already running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "503":
           description: Failed to launch the application
           content:
@@ -169,6 +175,13 @@ paths:
                 $ref: "#/components/schemas/Error"
         "400":
           description: Missing application id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: |
+            Failed to quit from the application that needs to be uninstalled.
           content:
             application/json:
               schema:

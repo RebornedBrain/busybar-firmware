@@ -4,7 +4,7 @@
  */
 #pragma once
 
-#include <stdbool.h>
+#include <core/string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,6 +18,9 @@ typedef enum {
     JsAppLauncherStatusTimeout, /**< Operation timed out */
     JsAppLauncherStatusNotRunning, /**< Js application is not running */
     JsAppLauncherStatusInvalidAppId, /**< Application ID is invalid */
+    JsAppLauncherStatusAborted, /**< Operation was aborted */
+    JsAppLauncherStatusLowPriority, /**< A higher-priorty application is already running */
+    JsAppLauncherStatusError, /**< An unknown error has occurred */
 } JsAppLauncherStatus;
 
 /**
@@ -46,6 +49,7 @@ typedef enum {
  * @returns @c JsAppLauncherStatusOk the application was successfully launched
  * @returns @c JsAppLauncherStatusInvalidAppId invalid application ID
  * @returns @c JsAppLauncherStatusTimeout operation timed out
+ * @returns @c JsAppLauncherStatusLowPriority a higher-priority application is already running
  */
 JsAppLauncherStatus js_app_launcher_start(const char* app_id, JsAppLauncherStartMode start_mode);
 
@@ -60,6 +64,18 @@ JsAppLauncherStatus js_app_launcher_start(const char* app_id, JsAppLauncherStart
  * @returns @c JsAppLauncherStatusTimeout operation timed out
  */
 JsAppLauncherStatus js_app_launcher_stop(JsAppLauncherStopMode stop_mode);
+
+/**
+ * @brief Get the currently running JS application ID.
+ *
+ * @param[in,out] app_id pointer to application ID output string (must be allocated)
+ * @returns @c JsAppLauncherStatusOk the application ID was successfully retrieved
+ * @returns @c JsAppLauncherStatusNotRunning no application is running
+ * @returns @c JsAppLauncherStatusTimeout operation timed out
+ * @returns @c JsAppLauncherStatusAborted operation was aborted
+ * @returns @c JsAppLauncherStatusError internal error or unexpected state
+ */
+JsAppLauncherStatus js_app_launcher_get_running_app_id(FuriString* app_id);
 
 #ifdef __cplusplus
 }
