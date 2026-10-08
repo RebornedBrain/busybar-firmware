@@ -42,10 +42,19 @@ static void fetch_request_free(FetchRequest* request) {
     }
 }
 
+static bool parse_request_has_crlf(const char* str) {
+    if(str == NULL) return false;
+    while(*str) {
+        if(*str == '\r' || *str == '\n') {
+            return true;
+        }
+        str++;
+    }
+    return false;
+}
+
 static void
     parse_request_append_app_name_header(FetchRequest* const request, const uint8_t header_index) {
-    furi_check(header_index != FETCH_HEADERS_COUNT_MAX);
-
     const size_t extra_header_size =
         sizeof(JS_FETCH_EXTRA_HEADER) + sizeof(JS_FETCH_EXTRA_VALUE) + 1;
 
@@ -117,44 +126,65 @@ static RequestParseResult parse_request(jerry_value_t obj) {
             // TODO instance of Headers
             if(jerry_value_is_object(headers_val)) {
                 bool app_header_appended = false;
+                bool parse_error = false;
                 jerry_value_t keys = jerry_object_keys(headers_val);
                 size_t num_keys = jerry_array_length(keys);
                 size_t header_idx = 0;
-                for(size_t i = 0; i != num_keys && header_idx != FETCH_HEADERS_COUNT_MAX; ++i) {
+                for(size_t i = 0;
+                    i != num_keys && header_idx != FETCH_HEADERS_COUNT_MAX && !parse_error;
+                    ++i) {
                     jerry_value_t key = jerry_object_get_index(keys, i);
                     jerry_value_t value = jerry_object_get(headers_val, key);
                     jerry_value_t value_conv = jerry_value_to_string(value);
                     if(jerry_value_is_string(key) && jerry_value_is_string(value_conv)) {
                         char* key_string = js_string_to_c_string(key);
-
-                        if(strcmp(key_string, JS_FETCH_EXTRA_HEADER) == 0) {
-                            FURI_LOG_W(TAG, "%s header override", JS_FETCH_EXTRA_HEADER);
-                            parse_request_append_app_name_header(&request, header_idx);
-                            app_header_appended = true;
+                        char* value_string = js_string_to_c_string(value_conv);
+                        if(parse_request_has_crlf(key_string) ||
+                           parse_request_has_crlf(value_string)) {
+                            FURI_LOG_W(TAG, "Injection detected");
+                            result = (RequestParseResult){
+                                .tag = RequestParseResultTypeError,
+                                .error = furi_string_alloc_set("Headers with CR LF are forbidden"),
+                            };
+                            parse_error = true;
+                        } else if(strcasecmp(key_string, JS_FETCH_EXTRA_HEADER) == 0) {
+                            if(!app_header_appended) {
+                                FURI_LOG_W(TAG, "%s header override", JS_FETCH_EXTRA_HEADER);
+                                parse_request_append_app_name_header(&request, header_idx);
+                                app_header_appended = true;
+                            } else {
+                                FURI_LOG_W(TAG, "%s header duplication", JS_FETCH_EXTRA_HEADER);
+                            }
                         } else {
-                            char* value_string = js_string_to_c_string(value_conv);
-
                             char* header_string =
                                 malloc(strlen(key_string) + 2 + strlen(value_string) + 1);
                             sprintf(header_string, "%s: %s", key_string, value_string);
-                            free(value_string);
                             request.headers.data[header_idx] = header_string;
                         }
+
                         free(key_string);
+                        free(value_string);
                         header_idx += 1;
                     }
                     jerry_value_free(key);
                     jerry_value_free(value);
                     jerry_value_free(value_conv);
                 }
+                jerry_value_free(keys);
 
-                if(!app_header_appended) {
-                    parse_request_append_app_name_header(&request, header_idx);
+                if(!app_header_appended && !parse_error) {
+                    if(header_idx == FETCH_HEADERS_COUNT_MAX)
+                        parse_request_append_app_name_header(&request, header_idx);
                     header_idx += 1;
                 }
 
-                jerry_value_free(keys);
                 request.headers.count = header_idx;
+
+                if(parse_error) {
+                    jerry_value_free(headers_val);
+                    break;
+                }
+
             } else {
                 result = (RequestParseResult){
                     .tag = RequestParseResultTypeError,
