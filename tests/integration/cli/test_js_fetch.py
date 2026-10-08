@@ -3,6 +3,7 @@
 import json
 import queue
 import re
+from pathlib import Path
 from textwrap import dedent
 
 import allure
@@ -45,7 +46,11 @@ JS_API_GET_ACCESS_TAGS = {"System", "Time"}
 
 
 @pytest.fixture(scope="class", autouse=True)
-def ensure_js_cli_available(web_base_url):
+def ensure_js_cli_available(request):
+    if request.config.getoption("export_js_only"):
+        return
+
+    web_base_url = request.getfixturevalue("web_base_url")
     with requests.post(
         f"{web_base_url}/api/apps/quit",
         data=b"",
@@ -58,10 +63,27 @@ def ensure_js_cli_available(web_base_url):
 
 
 @pytest.fixture(scope="class")
-def openapi_operations(web_base_url):
-    response = requests.get(f"{web_base_url}/openapi.yaml", timeout=10)
-    response.raise_for_status()
-    schema = yaml.safe_load(response.text)
+def openapi_operations(request):
+    if request.config.getoption("export_js_only"):
+        openapi_dir = (
+            Path(__file__).resolve().parents[3]
+            / "applications"
+            / "services"
+            / "web_server"
+            / "openapi"
+        )
+        paths = {}
+        for fragment_path in openapi_dir.glob("*.yaml"):
+            if fragment_path.name == "openapi.yaml":
+                continue
+            fragment = yaml.safe_load(fragment_path.read_text(encoding="utf-8"))
+            paths.update(fragment.get("paths", {}))
+        schema = {"paths": paths}
+    else:
+        web_base_url = request.getfixturevalue("web_base_url")
+        response = requests.get(f"{web_base_url}/openapi.yaml", timeout=10)
+        response.raise_for_status()
+        schema = yaml.safe_load(response.text)
     operations = {
         (method.upper(), path): frozenset(operation.get("tags", []))
         for path, path_item in schema.get("paths", {}).items()
