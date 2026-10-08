@@ -173,8 +173,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                 jerry_value_free(keys);
 
                 if(!app_header_appended && !parse_error) {
-                    if(header_idx == FETCH_HEADERS_COUNT_MAX)
-                        parse_request_append_app_name_header(&request, header_idx);
+                    parse_request_append_app_name_header(&request, header_idx);
                     header_idx += 1;
                 }
 
