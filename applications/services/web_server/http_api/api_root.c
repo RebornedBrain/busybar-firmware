@@ -153,7 +153,7 @@ static const HttpApiAccess js_apps_api_whitelist[] = {
     {"audio/play", HttpApiAccessMatchTypeExact, HttpMethodPost | HttpMethodDelete},
     {"busy", HttpApiAccessMatchTypePrefix, HttpMethodGet | HttpMethodPut},
     {"name", HttpApiAccessMatchTypeExact, HttpMethodGet},
-    {"volume", HttpApiAccessMatchTypePrefix, HttpMethodGet | HttpMethodPost},
+    {"audio/volume", HttpApiAccessMatchTypePrefix, HttpMethodGet | HttpMethodPost},
     {"time", HttpApiAccessMatchTypePrefix, HttpMethodGet},
     {"wifi", HttpApiAccessMatchTypePrefix, HttpMethodGet},
     {"version", HttpApiAccessMatchTypeExact, HttpMethodGet},
