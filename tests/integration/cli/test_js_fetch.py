@@ -35,7 +35,9 @@ JS_API_EXACT_OPERATIONS = {
     ("POST", "/api/audio/play"),
     ("DELETE", "/api/audio/play"),
     ("GET", "/api/name"),
+    ("GET", "/api/access"),
     ("GET", "/api/wifi/status"),
+    ("GET", "/api/wifi/networks"),
 }
 JS_API_FULL_ACCESS_PATHS = {
     "/api/display/brightness",
