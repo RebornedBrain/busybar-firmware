@@ -343,12 +343,11 @@ static HttpApiAccessStatus http_api_process_whitelist(
 }
 
 static inline bool http_api_is_request_from_js(struct mg_http_message* msg) {
-    struct mg_str* request_key = mg_http_get_header(msg, JS_FETCH_EXTRA_HEADER);
+    struct mg_str* header = mg_http_get_header(msg, JS_FETCH_EXTRA_HEADER);
     bool is_js = false;
-    if(request_key) {
-        char* str = malloc(request_key->len + 1);
-        memcpy(str, request_key->buf, request_key->len);
-        FURI_LOG_W(TAG, "%s: %s", JS_FETCH_EXTRA_HEADER, str);
+    if(header) {
+        char* str = malloc(header->len + 1);
+        memcpy(str, header->buf, header->len);
         is_js = strcasecmp(str, JS_FETCH_EXTRA_VALUE) == 0;
         free(str);
     }
