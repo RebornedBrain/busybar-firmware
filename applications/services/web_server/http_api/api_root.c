@@ -157,8 +157,13 @@ static const HttpApiAccess js_apps_api_whitelist[] = {
     {"time", HttpApiAccessMatchTypePrefix, HttpMethodGet},
     {"wifi", HttpApiAccessMatchTypePrefix, HttpMethodGet},
     {"version", HttpApiAccessMatchTypeExact, HttpMethodGet},
+    {"access", HttpApiAccessMatchTypeExact, HttpMethodGet},
     {"transport", HttpApiAccessMatchTypeExact, HttpMethodGet},
-    {"status", HttpApiAccessMatchTypePrefix, HttpMethodGet},
+    {"status", HttpApiAccessMatchTypeExact, HttpMethodGet},
+    {"status/device", HttpApiAccessMatchTypeExact, HttpMethodGet},
+    {"status/firmware", HttpApiAccessMatchTypeExact, HttpMethodGet},
+    {"status/system", HttpApiAccessMatchTypeExact, HttpMethodGet},
+    {"status/power", HttpApiAccessMatchTypeExact, HttpMethodGet},
 };
 
 typedef struct {
