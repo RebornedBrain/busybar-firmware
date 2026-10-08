@@ -337,6 +337,20 @@ static HttpApiAccessStatus http_api_process_whitelist(
     return status;
 }
 
+static inline bool http_api_is_request_from_js(struct mg_http_message* msg) {
+    struct mg_str* request_key = mg_http_get_header(msg, JS_FETCH_EXTRA_HEADER);
+    bool is_js = false;
+    if(request_key) {
+        char* str = malloc(request_key->len + 1);
+        memcpy(str, request_key->buf, request_key->len);
+        FURI_LOG_W(TAG, "%s: %s", JS_FETCH_EXTRA_HEADER, str);
+        is_js = strcasecmp(str, JS_FETCH_EXTRA_VALUE) == 0;
+        free(str);
+    }
+
+    return is_js;
+}
+
 static HttpApiAccessStatusEx http_api_access_status(
     ApiRootCtx* context,
     FuriString* path,
@@ -354,22 +368,6 @@ static HttpApiAccessStatusEx http_api_access_status(
             break;
         }
 
-        struct mg_str* request_key = mg_http_get_header(msg, JS_FETCH_EXTRA_HEADER);
-        if(request_key) {
-            char* str = malloc(request_key->len + 1);
-            memcpy(str, request_key->buf, request_key->len);
-            bool is_js = strncmp(str, JS_FETCH_EXTRA_VALUE, request_key->len) == 0;
-            free(str);
-
-            if(is_js) {
-                HttpApiAccessStatus status = http_api_process_whitelist(
-                    path, method, js_apps_api_whitelist, COUNT_OF(js_apps_api_whitelist));
-                status_ex.status = (status != HttpApiAccessStatusMax) ? status :
-                                                                        HttpApiAccessStatusDenied;
-                break;
-            }
-        }
-
         status_ex.status = http_api_process_whitelist(
             path, method, api_access_whitelist, COUNT_OF(api_access_whitelist));
         if(status_ex.status != HttpApiAccessStatusMax) break;
@@ -379,8 +377,17 @@ static HttpApiAccessStatusEx http_api_access_status(
         is_localhost &= (ip[0] == 127) && (ip[1] == 0) && (ip[2] == 0) && (ip[3] == 1);
 
         if(is_localhost) {
-            status_ex.status = HttpApiAccessStatusGrantedViaNetifWhitelist;
-            break;
+            bool is_js = http_api_is_request_from_js(msg);
+            if(is_js) {
+                HttpApiAccessStatus status = http_api_process_whitelist(
+                    path, method, js_apps_api_whitelist, COUNT_OF(js_apps_api_whitelist));
+                status_ex.status = (status != HttpApiAccessStatusMax) ? status :
+                                                                        HttpApiAccessStatusDenied;
+                break;
+            } else {
+                status_ex.status = HttpApiAccessStatusGrantedViaNetifWhitelist;
+                break;
+            }
         }
 
         bool is_usb = is_connection_on_netif(conn, NetworkNetifUsb);
