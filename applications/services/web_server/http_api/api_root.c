@@ -316,7 +316,7 @@ static HttpApiAccessStatus http_api_process_whitelist(
                 status = HttpApiAccessStatusGrantedViaEndpointWhitelist;
                 break;
             }
-        } else if(item->match_type == HttpApiAccessMatchTypePrefix) {
+        } else if((item->match_type == HttpApiAccessMatchTypePrefix) && (method & item->method)) {
             size_t pos = furi_string_search(path, item->uri);
             if(pos == 0) {
                 size_t path_len = furi_string_size(path);
