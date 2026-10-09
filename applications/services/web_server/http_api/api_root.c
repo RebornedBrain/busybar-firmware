@@ -17,8 +17,8 @@ typedef enum {
     HttpApiAccessStatusGrantedToAll = (1 << 2) | HttpApiAccessStatusGranted,
     HttpApiAccessStatusGrantedViaUserPassword = (1 << 3) | HttpApiAccessStatusGranted,
     HttpApiAccessStatusGrantedViaToken = (1 << 4) | HttpApiAccessStatusGranted,
-    HttpApiAccessStatusGrantedViaEndpointWhitelist = (1 << 5) | HttpApiAccessStatusGranted,
-    HttpApiAccessStatusGrantedViaNetifWhitelist = (1 << 6) | HttpApiAccessStatusGranted,
+    HttpApiAccessStatusGrantedViaEndpointAllowList = (1 << 5) | HttpApiAccessStatusGranted,
+    HttpApiAccessStatusGrantedViaNetifAllowList = (1 << 6) | HttpApiAccessStatusGranted,
     HttpApiAccessStatusMax,
 } HttpApiAccessStatus;
 
@@ -140,13 +140,13 @@ typedef struct {
 } HttpApiAccess;
 
 // Always accessible API endpoints
-static const HttpApiAccess api_access_whitelist[] = {
+static const HttpApiAccess api_access_allowlist[] = {
     {"version", HttpApiAccessMatchTypeExact, HttpMethodGet},
     {"access", HttpApiAccessMatchTypeExact, HttpMethodGet},
     {"transport", HttpApiAccessMatchTypeExact, HttpMethodGet},
 };
 
-static const HttpApiAccess js_apps_api_whitelist[] = {
+static const HttpApiAccess js_apps_api_allowlist[] = {
     {"apps/settings", HttpApiAccessMatchTypeExact, HttpMethodGet},
     {"display/brightness", HttpApiAccessMatchTypeExact, HttpMethodGet | HttpMethodPost},
     {"display/draw", HttpApiAccessMatchTypeExact, HttpMethodPost | HttpMethodDelete},
@@ -308,17 +308,17 @@ static void http_api_access_set_callback(
     }
 }
 
-static HttpApiAccessStatus http_api_process_whitelist(
+static HttpApiAccessStatus http_api_process_allowlist(
     FuriString* path,
     const HttpMethod method,
-    const HttpApiAccess* whitelist,
-    const size_t whitelist_count) {
+    const HttpApiAccess* allowlist,
+    const size_t allowlist_count) {
     HttpApiAccessStatus status = HttpApiAccessStatusMax;
-    for(size_t i = 0; i < whitelist_count; i++) {
-        const HttpApiAccess* item = &whitelist[i];
+    for(size_t i = 0; i < allowlist_count; i++) {
+        const HttpApiAccess* item = &allowlist[i];
         if(item->match_type == HttpApiAccessMatchTypeExact) {
             if(furi_string_equal(path, item->uri) && (method & item->method)) {
-                status = HttpApiAccessStatusGrantedViaEndpointWhitelist;
+                status = HttpApiAccessStatusGrantedViaEndpointAllowList;
                 break;
             }
         } else if((item->match_type == HttpApiAccessMatchTypePrefix) && (method & item->method)) {
@@ -327,12 +327,12 @@ static HttpApiAccessStatus http_api_process_whitelist(
                 size_t path_len = furi_string_size(path);
                 size_t template_len = strlen(item->uri);
                 if(path_len == template_len) {
-                    status = HttpApiAccessStatusGrantedViaEndpointWhitelist;
+                    status = HttpApiAccessStatusGrantedViaEndpointAllowList;
                     break;
                 } else if(path_len > template_len) {
                     char next_symbol = furi_string_get_char(path, template_len);
                     if(next_symbol == '/') {
-                        status = HttpApiAccessStatusGrantedViaEndpointWhitelist;
+                        status = HttpApiAccessStatusGrantedViaEndpointAllowList;
                         break;
                     }
                 }
@@ -372,8 +372,8 @@ static HttpApiAccessStatusEx http_api_access_status(
             break;
         }
 
-        status_ex.status = http_api_process_whitelist(
-            path, method, api_access_whitelist, COUNT_OF(api_access_whitelist));
+        status_ex.status = http_api_process_allowlist(
+            path, method, api_access_allowlist, COUNT_OF(api_access_allowlist));
         if(status_ex.status != HttpApiAccessStatusMax) break;
 
         uint8_t* ip = conn->rem.addr.ip;
@@ -383,13 +383,13 @@ static HttpApiAccessStatusEx http_api_access_status(
         if(is_localhost) {
             bool is_js = http_api_is_request_from_js(msg);
             if(is_js) {
-                HttpApiAccessStatus status = http_api_process_whitelist(
-                    path, method, js_apps_api_whitelist, COUNT_OF(js_apps_api_whitelist));
+                HttpApiAccessStatus status = http_api_process_allowlist(
+                    path, method, js_apps_api_allowlist, COUNT_OF(js_apps_api_allowlist));
                 status_ex.status = (status != HttpApiAccessStatusMax) ? status :
                                                                         HttpApiAccessStatusDenied;
                 break;
             } else {
-                status_ex.status = HttpApiAccessStatusGrantedViaNetifWhitelist;
+                status_ex.status = HttpApiAccessStatusGrantedViaNetifAllowList;
                 break;
             }
         }
@@ -439,7 +439,7 @@ static HttpApiAccessStatusEx http_api_access_status(
                 }
             }
         } else if(is_usb) {
-            status_ex.status = HttpApiAccessStatusGrantedViaNetifWhitelist;
+            status_ex.status = HttpApiAccessStatusGrantedViaNetifAllowList;
             break;
         }
 
