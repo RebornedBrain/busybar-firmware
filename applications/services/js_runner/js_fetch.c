@@ -42,7 +42,7 @@ static void fetch_request_free(FetchRequest* request) {
     }
 }
 
-static bool parse_request_has_crlf(const char* str) {
+static bool parse_request_is_multiline_string(const char* str) {
     if(str == NULL) return false;
     while(*str) {
         if(*str == '\r' || *str == '\n') {
@@ -139,8 +139,8 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                     if(jerry_value_is_string(key) && jerry_value_is_string(value_conv)) {
                         char* key_string = js_string_to_c_string(key);
                         char* value_string = js_string_to_c_string(value_conv);
-                        if(parse_request_has_crlf(key_string) ||
-                           parse_request_has_crlf(value_string)) {
+                        if(parse_request_is_multiline_string(key_string) ||
+                           parse_request_is_multiline_string(value_string)) {
                             FURI_LOG_W(TAG, "Injection detected");
                             result = (RequestParseResult){
                                 .tag = RequestParseResultTypeError,
