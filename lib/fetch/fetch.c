@@ -364,7 +364,7 @@ FetchStatus fetch_run(Fetch* instance, const FetchRequest* request) {
 
     furi_check(request);
     furi_check(request->url);
-    furi_check(request->headers.count <= FETCH_HEADERS_COUNT_TOTAL);
+    furi_check(request->headers.count <= FETCH_HEADERS_COUNT_MAX);
 
     if(instance->is_stop_requested) {
         return FetchStatusAborted;

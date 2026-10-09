@@ -9,10 +9,8 @@
 #include <toolbox/tls_config.h>
 
 /** Maximum number of additional request headers. */
-#define FETCH_HEADERS_COUNT_MAX      (10)
-#define FETCH_HEADERS_COUNT_INTERNAL (1)
+#define FETCH_HEADERS_COUNT_MAX (12)
 
-#define FETCH_HEADERS_COUNT_TOTAL (FETCH_HEADERS_COUNT_MAX + FETCH_HEADERS_COUNT_INTERNAL)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -32,7 +30,7 @@ typedef struct {
      * Each header must be a zero-terminated string.
      * Maximum number of the headers is limited to @c FETCH_HEADERS_COUNT_MAX.
      */
-    const char* data[FETCH_HEADERS_COUNT_TOTAL];
+    const char* data[FETCH_HEADERS_COUNT_MAX];
     uint32_t count; /**< Number of provided headers. */
 } FetchRequestHeaders;
 

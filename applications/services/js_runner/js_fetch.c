@@ -9,8 +9,9 @@
 #include <fetch/fetch.h>
 #include <http/http_response.h>
 
-#define TAG                     "JsFetch"
-#define FETCH_THREAD_STACK_SIZE (10 * 1024)
+#define TAG                       "JsFetch"
+#define FETCH_THREAD_STACK_SIZE   (10 * 1024)
+#define JS_FETCH_HEADER_COUNT_MAX (FETCH_HEADERS_COUNT_MAX - 1)
 
 #define IS_RUNNING(child) (instance->child.status == ChildStatusRunning)
 
@@ -131,7 +132,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                 size_t num_keys = jerry_array_length(keys);
                 size_t header_idx = 0;
                 for(size_t i = 0;
-                    i != num_keys && header_idx != FETCH_HEADERS_COUNT_MAX && !parse_error;
+                    i != num_keys && header_idx != JS_FETCH_HEADER_COUNT_MAX && !parse_error;
                     ++i) {
                     jerry_value_t key = jerry_object_get_index(keys, i);
                     jerry_value_t value = jerry_object_get(headers_val, key);
