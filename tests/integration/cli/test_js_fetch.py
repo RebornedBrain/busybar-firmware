@@ -967,6 +967,47 @@ class TestJSFetch:
             timeout=35,
         )
 
+    @allure.title("JavaScript API whitelist rejects dot-segment traversal.")
+    def test_local_api_whitelist_rejects_dot_segment_traversal(self, js_case_runner):
+        cases = [
+            {
+                "method": "GET",
+                "path": "/time/../account/info",
+                "operation": "literal parent segment",
+            },
+            {
+                "method": "GET",
+                "path": "/time/%2e%2e/account/info",
+                "operation": "lowercase encoded parent segment",
+            },
+            {
+                "method": "GET",
+                "path": "/time/%2E%2E/account/info",
+                "operation": "uppercase encoded parent segment",
+            },
+            {
+                "method": "GET",
+                "path": "/time/.%2e/account/info",
+                "operation": "partially encoded parent segment",
+            },
+            {
+                "method": "GET",
+                "path": "/time/%2e%2e%2faccount/info",
+                "operation": "encoded parent segment and separator",
+            },
+            {
+                "method": "GET",
+                "path": "/time/%252e%252e/account/info",
+                "operation": "double encoded parent segment",
+            },
+        ]
+
+        js_case_runner(
+            "local_api_dot_segment_traversal",
+            build_api_access_case(cases, forbidden=True),
+            timeout=35,
+        )
+
     @allure.title("JavaScript fetch releases resources across repeated requests.")
     @pytest.mark.long_running
     def test_repeated_requests(self, js_case_runner, http_server):
