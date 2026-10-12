@@ -355,7 +355,7 @@ static inline bool http_api_is_request_from_js(struct mg_http_message* msg) {
     return is_js;
 }
 
-static inline void http_api_normalize_path(FuriString* path) {
+static inline void http_api_decode_path(FuriString* path) {
     furi_string_to_lower_in_place(path);
     furi_string_replace_all_str(path, "%25", "%");
     furi_string_replace_all_str(path, "%2e", ".");
@@ -364,7 +364,7 @@ static inline void http_api_normalize_path(FuriString* path) {
 }
 
 static inline bool http_api_path_is_safe(FuriString* path) {
-    http_api_normalize_path(path);
+    http_api_decode_path(path);
     return furi_string_search_str(path, "..") == FURI_STRING_FAILURE;
 }
 
