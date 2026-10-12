@@ -355,17 +355,10 @@ static inline bool http_api_is_request_from_js(struct mg_http_message* msg) {
     return is_js;
 }
 
-static inline void http_api_decode_path(FuriString* path) {
-    furi_string_to_lower_in_place(path);
-    furi_string_replace_all_str(path, "%25", "%");
-    furi_string_replace_all_str(path, "%2e", ".");
-    furi_string_replace_all_str(path, "%2f", "/");
-    furi_string_replace_all_str(path, "//", "/");
-}
-
-static inline bool http_api_path_is_safe(FuriString* path) {
-    http_api_decode_path(path);
-    return furi_string_search_str(path, "..") == FURI_STRING_FAILURE;
+static inline bool http_api_path_is_safe(struct mg_http_message* msg) {
+    char decoded[MG_PATH_MAX];
+    int n = mg_url_decode(msg->uri.buf, msg->uri.len, decoded, sizeof(decoded), 0);
+    return !(n > 0 && ((strstr(decoded, "..") != NULL) || strstr(decoded, "%2e%2e") != NULL));
 }
 
 static HttpApiAccessStatusEx http_api_access_status(
@@ -379,7 +372,7 @@ static HttpApiAccessStatusEx http_api_access_status(
     status_ex.status = HttpApiAccessStatusMax;
 
     do {
-        if(!http_api_path_is_safe(path)) {
+        if(!http_api_path_is_safe(msg)) {
             status_ex.status = HttpApiAccessStatusDenied;
             break;
         }
