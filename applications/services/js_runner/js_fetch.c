@@ -153,6 +153,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                                 FURI_LOG_W(TAG, "%s header override", JS_FETCH_EXTRA_HEADER);
                                 parse_request_append_app_name_header(&request, header_idx);
                                 app_header_appended = true;
+                                header_idx += 1;
                             } else {
                                 FURI_LOG_W(TAG, "%s header duplication", JS_FETCH_EXTRA_HEADER);
                             }
@@ -161,11 +162,11 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                                 malloc(strlen(key_string) + 2 + strlen(value_string) + 1);
                             sprintf(header_string, "%s: %s", key_string, value_string);
                             request.headers.data[header_idx] = header_string;
+                            header_idx += 1;
                         }
 
                         free(key_string);
                         free(value_string);
-                        header_idx += 1;
                     }
                     jerry_value_free(key);
                     jerry_value_free(value);
