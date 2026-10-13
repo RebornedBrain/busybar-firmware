@@ -356,38 +356,9 @@ static inline bool http_api_is_request_from_js(struct mg_http_message* msg) {
 }
 
 static inline bool http_api_path_is_safe(struct mg_http_message* msg) {
-    if(msg->uri.len >= MG_PATH_MAX) {
-        return false;
-    }
-
-    char buf1[MG_PATH_MAX];
-    char buf2[MG_PATH_MAX];
-
-    memcpy(buf1, msg->uri.buf, msg->uri.len);
-    buf1[msg->uri.len] = '\0';
-
-    char* src = buf1;
-    char* dst = buf2;
-
-    int current_len = msg->uri.len;
-    while(true) {
-        if(strstr(src, "..") != NULL) {
-            return false;
-        }
-
-        int n = mg_url_decode(src, current_len, dst, MG_PATH_MAX, 0);
-
-        if(n < 0 || n == current_len) {
-            break;
-        }
-
-        char* tmp = src;
-        src = dst;
-        dst = tmp;
-        current_len = n;
-    }
-
-    return true;
+    char decoded[MG_PATH_MAX];
+    int n = mg_url_decode(msg->uri.buf, msg->uri.len, decoded, sizeof(decoded), 0);
+    return !(n > 0 && (strstr(decoded, "..") != NULL));
 }
 
 static HttpApiAccessStatusEx http_api_access_status(
