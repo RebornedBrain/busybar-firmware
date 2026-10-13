@@ -148,7 +148,11 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                                 .error = furi_string_alloc_set("Headers with CR LF are forbidden"),
                             };
                             parse_error = true;
-                        } else if(strcasecmp(key_string, JS_FETCH_EXTRA_HEADER) == 0) {
+                        } else if(
+                            strncasecmp(
+                                key_string,
+                                JS_FETCH_EXTRA_HEADER,
+                                sizeof(JS_FETCH_EXTRA_HEADER) - 1) == 0) {
                             if(!app_header_appended) {
                                 FURI_LOG_W(TAG, "%s header override", JS_FETCH_EXTRA_HEADER);
                                 parse_request_append_extra_header(&request, header_idx);
