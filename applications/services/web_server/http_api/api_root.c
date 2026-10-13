@@ -416,22 +416,23 @@ static HttpApiAccessStatusEx http_api_access_status(
             path, method, api_access_allowlist, COUNT_OF(api_access_allowlist));
         if(status_ex.status != HttpApiAccessStatusMax) break;
 
+        bool is_js = http_api_is_request_from_js(msg);
+        if(is_js) {
+            HttpApiAccessStatus status = http_api_process_allowlist(
+                path, method, js_apps_api_allowlist, COUNT_OF(js_apps_api_allowlist));
+            if(status == HttpApiAccessStatusMax) {
+                status_ex.status = HttpApiAccessStatusDenied;
+                break;
+            }
+        }
+
         uint8_t* ip = conn->rem.addr.ip;
         bool is_localhost = !conn->rem.is_ip6;
         is_localhost &= (ip[0] == 127) && (ip[1] == 0) && (ip[2] == 0) && (ip[3] == 1);
 
         if(is_localhost) {
-            bool is_js = http_api_is_request_from_js(msg);
-            if(is_js) {
-                HttpApiAccessStatus status = http_api_process_allowlist(
-                    path, method, js_apps_api_allowlist, COUNT_OF(js_apps_api_allowlist));
-                status_ex.status = (status != HttpApiAccessStatusMax) ? status :
-                                                                        HttpApiAccessStatusDenied;
-                break;
-            } else {
-                status_ex.status = HttpApiAccessStatusGrantedViaNetifAllowList;
-                break;
-            }
+            status_ex.status = HttpApiAccessStatusGrantedViaNetifAllowList;
+            break;
         }
 
         bool is_usb = is_connection_on_netif(conn, NetworkNetifUsb);
