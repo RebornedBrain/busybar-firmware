@@ -55,7 +55,7 @@ static bool parse_request_is_multiline_string(const char* str) {
 }
 
 static void
-    parse_request_append_app_name_header(FetchRequest* const request, const uint8_t header_index) {
+    parse_request_append_extra_header(FetchRequest* const request, const uint8_t header_index) {
     const size_t extra_header_size =
         sizeof(JS_FETCH_EXTRA_HEADER) + sizeof(JS_FETCH_EXTRA_VALUE) + 1;
 
@@ -151,7 +151,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                         } else if(strcasecmp(key_string, JS_FETCH_EXTRA_HEADER) == 0) {
                             if(!app_header_appended) {
                                 FURI_LOG_W(TAG, "%s header override", JS_FETCH_EXTRA_HEADER);
-                                parse_request_append_app_name_header(&request, header_idx);
+                                parse_request_append_extra_header(&request, header_idx);
                                 app_header_appended = true;
                                 header_idx += 1;
                             } else {
@@ -175,7 +175,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                 jerry_value_free(keys);
 
                 if(!app_header_appended && !parse_error) {
-                    parse_request_append_app_name_header(&request, header_idx);
+                    parse_request_append_extra_header(&request, header_idx);
                     header_idx += 1;
                 }
 
@@ -196,7 +196,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
             }
             jerry_value_free(headers_val);
         } else {
-            parse_request_append_app_name_header(&request, 0);
+            parse_request_append_extra_header(&request, 0);
             request.headers.count = 1;
         }
 
