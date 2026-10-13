@@ -64,6 +64,10 @@ static void
     request->headers.data[header_index] = extra_header;
 }
 
+static inline bool parse_request_extra_header_injected(const char* input) {
+    return strnstr(input, JS_FETCH_EXTRA_HEADER, strlen(input)) != NULL;
+}
+
 static RequestParseResult parse_request(jerry_value_t obj) {
     furi_assert(js_is_instance_of(obj, "Request"));
 
@@ -89,6 +93,14 @@ static RequestParseResult parse_request(jerry_value_t obj) {
             };
             break;
         }
+
+        if(parse_request_extra_header_injected(request.url)) {
+            result = (RequestParseResult){
+                .tag = RequestParseResultTypeError,
+                .error = furi_string_alloc_set("Header injection into url is forbidden"),
+            };
+            break;
+        }
         JS_TRACE("Fetch %s", request.url);
 
         if(js_object_has_property(obj, "method")) {
@@ -99,6 +111,14 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                 result = (RequestParseResult){
                     .tag = RequestParseResultTypeError,
                     .error = furi_string_alloc_set("Method is not a string"),
+                };
+                break;
+            }
+
+            if(parse_request_extra_header_injected(request.method)) {
+                result = (RequestParseResult){
+                    .tag = RequestParseResultTypeError,
+                    .error = furi_string_alloc_set("Header injection into method is forbidden"),
                 };
                 break;
             }
