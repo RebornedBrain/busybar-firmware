@@ -97,7 +97,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
         if(parse_request_extra_header_present(request.url)) {
             result = (RequestParseResult){
                 .tag = RequestParseResultTypeError,
-                .error = furi_string_alloc_set("Header injection into url is forbidden"),
+                .error = furi_string_alloc_set("Invalid URL"),
             };
             break;
         }
@@ -118,7 +118,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
             if(parse_request_extra_header_present(request.method)) {
                 result = (RequestParseResult){
                     .tag = RequestParseResultTypeError,
-                    .error = furi_string_alloc_set("Header injection into method is forbidden"),
+                    .error = furi_string_alloc_set("Invalid method"),
                 };
                 break;
             }
