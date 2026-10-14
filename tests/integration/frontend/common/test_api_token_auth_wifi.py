@@ -13,7 +13,6 @@ import requests
 from clients.api import WIFI_SSID, MintedAccessToken, SettingsAPI, WifiAPI
 from utils.wait import wait_for
 
-
 _INITIAL_ACCESS_KEY = "73916482"
 _CHANGED_ACCESS_KEY = "28461739"
 _TOKEN_HEADER = "X-API-Token"
@@ -130,7 +129,7 @@ class TestAPITokenAuthenticationWiFi:
         _JS_FETCH_HEADER_VALUES,
         ids=_JS_FETCH_HEADER_VALUE_IDS,
     )
-    def test_external_js_marker_does_not_shadow_valid_token(
+    def test_external_js_marker_shadows_valid_token(
         self,
         wifi_token_api: SettingsAPI,
         access_token_factory: Callable[[str], MintedAccessToken],
@@ -148,10 +147,10 @@ class TestAPITokenAuthenticationWiFi:
                 },
             )
 
-        with allure.step("Verify token authorization is not shadowed"):
-            assert response.status_code == 200, (
+        with allure.step("Verify token authorization is not allowed"):
+            assert response.status_code == 403, (
                 f"Expected valid token with external marker {marker!r} to return "
-                f"HTTP 200, got {response.status_code}: {response.text!r}"
+                f"HTTP 403, got {response.status_code}: {response.text!r}"
             )
 
     @allure.title("Key mode requires credentials and accepts generated token")
