@@ -64,8 +64,8 @@ static void
     request->headers.data[header_index] = extra_header;
 }
 
-static inline bool parse_request_extra_header_injected(const char* input) {
-    return strnstr(input, JS_FETCH_EXTRA_HEADER, strlen(input)) != NULL;
+static inline bool parse_request_extra_header_present(const char* input) {
+    return strcasestr(input, JS_FETCH_EXTRA_HEADER) != NULL;
 }
 
 static RequestParseResult parse_request(jerry_value_t obj) {
@@ -94,7 +94,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
             break;
         }
 
-        if(parse_request_extra_header_injected(request.url)) {
+        if(parse_request_extra_header_present(request.url)) {
             result = (RequestParseResult){
                 .tag = RequestParseResultTypeError,
                 .error = furi_string_alloc_set("Header injection into url is forbidden"),
@@ -115,7 +115,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                 break;
             }
 
-            if(parse_request_extra_header_injected(request.method)) {
+            if(parse_request_extra_header_present(request.method)) {
                 result = (RequestParseResult){
                     .tag = RequestParseResultTypeError,
                     .error = furi_string_alloc_set("Header injection into method is forbidden"),
@@ -168,11 +168,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                                 .error = furi_string_alloc_set("Headers with CR LF are forbidden"),
                             };
                             parse_error = true;
-                        } else if(
-                            strncasecmp(
-                                key_string,
-                                JS_FETCH_EXTRA_HEADER,
-                                sizeof(JS_FETCH_EXTRA_HEADER) - 1) == 0) {
+                        } else if(parse_request_extra_header_present(key_string)) {
                             if(!app_header_appended) {
                                 FURI_LOG_W(TAG, "%s header override", JS_FETCH_EXTRA_HEADER);
                                 parse_request_append_extra_header(&request, header_idx);
