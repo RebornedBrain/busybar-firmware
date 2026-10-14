@@ -995,16 +995,29 @@ class TestJSFetch:
                 "path": "/time/%2e%2e%2faccount/info",
                 "operation": "encoded parent segment and separator",
             },
-            {
-                "method": "GET",
-                "path": "/time/%252e%252e/account/info",
-                "operation": "double encoded parent segment",
-            },
         ]
 
         js_case_runner(
             "local_api_dot_segment_traversal",
             build_api_access_case(cases, forbidden=True),
+            timeout=35,
+        )
+
+    @allure.title("JavaScript API whitelist rejects dot-segment traversal.")
+    def test_local_api_whitelist_results_error_on_double_encoded_dot_segment_traversal(
+        self, js_case_runner
+    ):
+        cases = [
+            {
+                "method": "GET",
+                "path": "/time/%252e%252e/account/info",
+                "operation": "double encoded parent segment",
+            }
+        ]
+
+        js_case_runner(
+            "local_api_double_encoded_dot_segment_traversal",
+            build_api_access_case(cases, forbidden=False),
             timeout=35,
         )
 
