@@ -251,8 +251,8 @@ class TestJSFetch:
     @allure.title("JavaScript cannot override the reserved fetch marker header.")
     @pytest.mark.parametrize(
         "header_name",
-        ["X-busybar-fetch", "x-busybar-fetch", "X-BUSYBAR-FETCH"],
-        ids=["canonical", "lowercase", "uppercase"],
+        ["X-busybar-fetch", "x-busybar-fetch", "X-BUSYBAR-FETCH", "  X-busybar-fetch", "X-busybar-fetch:"],
+        ids=["canonical", "lowercase", "uppercase", "lead_spaces" , "extra_double_dot"]
     )
     def test_reserved_marker_cannot_be_overridden(
         self,
@@ -260,7 +260,7 @@ class TestJSFetch:
         http_server,
         header_name,
     ):
-        case_name = f"reserved_marker_override_{header_name}"
+        case_name = f"reserved_marker_override_{header_name.strip(" :")}"
         url = json.dumps(http_server.url("/request"))
         headers = json.dumps({header_name: "untrusted"})
         body = dedent(
