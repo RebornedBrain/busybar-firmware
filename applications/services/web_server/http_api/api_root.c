@@ -342,7 +342,7 @@ static HttpApiAccessStatus http_api_process_allowlist(
     return status;
 }
 
-static inline bool http_api_is_request_from_js(struct mg_http_message* msg) {
+bool http_api_is_request_from_js(struct mg_http_message* msg) {
     bool is_js = false;
     const struct mg_str* header = mg_http_get_header(msg, JS_FETCH_EXTRA_HEADER);
 
