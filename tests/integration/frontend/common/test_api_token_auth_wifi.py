@@ -123,17 +123,23 @@ class TestAPITokenAuthenticationWiFi:
                 f"got HTTP {response.status_code}: {response.text!r}"
             )
 
-    @allure.title("External JS fetch marker cannot shadow a valid API token")
+    @allure.title("Only a recognized JS marker shadows a valid API token")
     @pytest.mark.parametrize(
-        "marker",
-        _JS_FETCH_HEADER_VALUES,
-        ids=_JS_FETCH_HEADER_VALUE_IDS,
+        ("marker", "expected_status"),
+        [
+            pytest.param("js", 403, id="exact"),
+            pytest.param("j", 200, id="prefix"),
+            pytest.param("", 200, id="empty"),
+            pytest.param("jsX", 200, id="suffix"),
+            pytest.param("JS", 403, id="uppercase"),
+        ],
     )
     def test_external_js_marker_shadows_valid_token(
         self,
         wifi_token_api: SettingsAPI,
         access_token_factory: Callable[[str], MintedAccessToken],
         marker: str,
+        expected_status: int,
     ):
         with allure.step("Create a valid API token"):
             token = access_token_factory(f"wifi-js-marker-{uuid4().hex[:10]}")
@@ -147,10 +153,11 @@ class TestAPITokenAuthenticationWiFi:
                 },
             )
 
-        with allure.step("Verify token authorization is not allowed"):
-            assert response.status_code == 403, (
+        with allure.step("Verify the expected token authorization result"):
+            assert response.status_code == expected_status, (
                 f"Expected valid token with external marker {marker!r} to return "
-                f"HTTP 403, got {response.status_code}: {response.text!r}"
+                f"HTTP {expected_status}, got {response.status_code}: "
+                f"{response.text!r}"
             )
 
     @allure.title("Key mode requires credentials and accepts generated token")

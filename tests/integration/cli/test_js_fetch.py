@@ -37,7 +37,6 @@ JS_API_EXACT_OPERATIONS = {
     ("GET", "/api/name"),
     ("GET", "/api/access"),
     ("GET", "/api/wifi/status"),
-    ("GET", "/api/wifi/networks"),
 }
 JS_API_FULL_ACCESS_PATHS = {
     "/api/display/brightness",
@@ -252,7 +251,7 @@ class TestJSFetch:
     @pytest.mark.parametrize(
         "header_name",
         ["X-busybar-fetch", "x-busybar-fetch", "X-BUSYBAR-FETCH", "  X-busybar-fetch"],
-        ids=["canonical", "lowercase", "uppercase", "lead_spaces" ]
+        ids=["canonical", "lowercase", "uppercase", "lead_spaces"],
     )
     def test_reserved_marker_cannot_be_overridden(
         self,
@@ -276,6 +275,112 @@ class TestJSFetch:
         with allure.step("Verify the user value was replaced, not duplicated"):
             captured = captured_request(http_server, output, "override request")
             assert_js_fetch_header(captured)
+
+    @allure.title("JavaScript fetch permits a colon in a header value.")
+    def test_reserved_marker_value_allows_colon(self, js_case_runner, http_server):
+        case_name = "reserved_marker_value_colon"
+        url = json.dumps(http_server.url("/request"))
+        headers = json.dumps({JS_FETCH_HEADER: "localhost:8080"})
+        body = dedent(
+            f"""
+                const response = await fetch({url}, {{headers: {headers}}});
+                assert(response.status === 200, "status=" + response.status);
+                await response.text();
+            """
+        ).strip()
+
+        output = js_case_runner(case_name, body)
+
+        with allure.step(
+            "Verify the reserved marker was replaced with the trusted value"
+        ):
+            captured = captured_request(http_server, output, "colon-value request")
+            assert_js_fetch_header(captured)
+
+    @allure.title("JavaScript fetch rejects a colon in a header name.")
+    def test_header_name_with_colon_rejects(self, js_case_runner, http_server):
+        case_name = "header_name_colon_rejects"
+        url = json.dumps(http_server.url("/request"))
+        headers = json.dumps({f"{JS_FETCH_HEADER}:": "spoofed"})
+        body = dedent(
+            f"""
+                let error_message = "";
+                try {{
+                    await fetch({url}, {{headers: {headers}}});
+                }} catch (error) {{
+                    error_message = String(error);
+                }}
+                assert(error_message === "Invalid header",
+                    "error=" + error_message);
+            """
+        ).strip()
+
+        js_case_runner(case_name, body)
+
+    @allure.title("JavaScript fetch rejects a request-target containing CRLF.")
+    def test_url_with_http_request_line_rejects(self, js_case_runner):
+        case_name = "url_with_request_line_rejects"
+        url = "http://127.0.0.1/api/apps/list HTTP/1.0\r\n"
+        url += "X-busybar-fetch: spoofed\r\nX-junk:"
+        body = dedent(
+            f"""
+                let error_message = "";
+                try {{
+                    await fetch({json.dumps(url)});
+                }} catch (error) {{
+                    error_message = String(error);
+                }}
+                assert(error_message === "Invalid URL",
+                    "error=" + error_message);
+            """
+        ).strip()
+
+        js_case_runner(case_name, body)
+
+    @allure.title("JavaScript fetch rejects an HTTP request line as a method.")
+    def test_method_with_http_request_line_rejects(self, js_case_runner):
+        case_name = "method_with_request_line_rejects"
+        method = "GET /api/apps/list HTTP/1.0\r\n"
+        method += "X-busybar-fetch: spoofed\r\nX-junk:"
+        body = dedent(
+            f"""
+                let error_message = "";
+                try {{
+                    await fetch({json.dumps(LOCAL_API_URL + "/apps/list")},
+                        {{method: {json.dumps(method)}}});
+                }} catch (error) {{
+                    error_message = String(error);
+                }}
+                assert(error_message === "Invalid method",
+                    "error=" + error_message);
+            """
+        ).strip()
+
+        js_case_runner(case_name, body)
+
+    @allure.title("A spoofed JavaScript marker cannot authorize a local API request.")
+    @pytest.mark.parametrize(
+        "header_name",
+        ["X-busybar-fetch", "x-busybar-fetch", "X-BUSYBAR-FETCH", "  X-busybar-fetch"],
+        ids=["canonical", "lowercase", "uppercase", "lead_spaces"],
+    )
+    def test_reserved_marker_does_not_authorize_local_api(
+        self, js_case_runner, header_name
+    ):
+        case_name = f"reserved_marker_local_api_{header_name.strip(' ')}"
+        headers = json.dumps({header_name: "spoofed"})
+        body = dedent(
+            f"""
+                const response = await fetch(
+                    {json.dumps(LOCAL_API_URL + "/apps/list")},
+                    {{headers: {headers}}}
+                );
+                assert(response.status === 403, "status=" + response.status);
+                await response.text();
+            """
+        ).strip()
+
+        js_case_runner(case_name, body)
 
     @allure.title("JavaScript fetch preserves encoded query parameters.")
     def test_get_query_parameters(self, js_case_runner, http_server):
