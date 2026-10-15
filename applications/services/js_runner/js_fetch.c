@@ -43,17 +43,6 @@ static void fetch_request_free(FetchRequest* request) {
     }
 }
 
-static bool parse_request_is_multiline_string(const char* str) {
-    if(str == NULL) return false;
-    while(*str) {
-        if(*str == '\r' || *str == '\n') {
-            return true;
-        }
-        str++;
-    }
-    return false;
-}
-
 static void
     parse_request_append_extra_header(FetchRequest* const request, const uint8_t header_index) {
     const size_t extra_header_size =
@@ -66,6 +55,18 @@ static void
 
 static inline bool parse_request_extra_header_present(const char* input) {
     return strcasestr(input, JS_FETCH_EXTRA_HEADER) != NULL;
+}
+
+static bool parse_request_header_is_valid(const char* header, bool check_colon) {
+    if(header == NULL) return false;
+    while(*header) {
+        if(*header == '\r' || *header == '\n' || (check_colon && *header == ':')) {
+            return false;
+        }
+
+        header++;
+    }
+    return true;
 }
 
 static bool parse_request_url_is_valid(const char* url) {
@@ -185,12 +186,11 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                     if(jerry_value_is_string(key) && jerry_value_is_string(value_conv)) {
                         char* key_string = js_string_to_c_string(key);
                         char* value_string = js_string_to_c_string(value_conv);
-                        if(parse_request_is_multiline_string(key_string) ||
-                           parse_request_is_multiline_string(value_string)) {
-                            FURI_LOG_W(TAG, "Injection detected");
+                        if(!parse_request_header_is_valid(key_string, true) ||
+                           !parse_request_header_is_valid(value_string, false)) {
                             result = (RequestParseResult){
                                 .tag = RequestParseResultTypeError,
-                                .error = furi_string_alloc_set("Headers with CR LF are forbidden"),
+                                .error = furi_string_alloc_set("Invalid header"),
                             };
                             parse_error = true;
                         } else if(parse_request_extra_header_present(key_string)) {
