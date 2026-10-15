@@ -155,7 +155,7 @@ static const HttpApiAccess js_apps_api_allowlist[] = {
     {"name", HttpApiAccessMatchTypeExact, HttpMethodGet},
     {"audio/volume", HttpApiAccessMatchTypePrefix, HttpMethodGet | HttpMethodPost},
     {"time", HttpApiAccessMatchTypePrefix, HttpMethodGet},
-    {"wifi", HttpApiAccessMatchTypePrefix, HttpMethodGet},
+    {"wifi/status", HttpApiAccessMatchTypeExact, HttpMethodGet},
     {"version", HttpApiAccessMatchTypeExact, HttpMethodGet},
     {"access", HttpApiAccessMatchTypeExact, HttpMethodGet},
     {"transport", HttpApiAccessMatchTypeExact, HttpMethodGet},
