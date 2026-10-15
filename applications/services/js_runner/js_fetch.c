@@ -68,6 +68,31 @@ static inline bool parse_request_extra_header_present(const char* input) {
     return strcasestr(input, JS_FETCH_EXTRA_HEADER) != NULL;
 }
 
+static bool parse_request_url_is_valid(const char* url) {
+    static const char* const allowed_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                             "abcdefghijklmnopqrstuvwxyz"
+                                             "0123456789"
+                                             "-._~"
+                                             ":/?#[]@"
+                                             "!$&'()*+,;="
+                                             "%";
+
+    size_t valid_len = strspn(url, allowed_chars);
+    return url[valid_len] == '\0';
+}
+
+static bool parse_request_method_is_valid(const char* method) {
+    static const char* const allowed_methods[] = {
+        "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "CONNECT", "TRACE"};
+
+    for(uint8_t i = 0; i < COUNT_OF(allowed_methods); i++) {
+        if(strcasecmp(method, allowed_methods[i]) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static RequestParseResult parse_request(jerry_value_t obj) {
     furi_assert(js_is_instance_of(obj, "Request"));
 
@@ -94,7 +119,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
             break;
         }
 
-        if(parse_request_extra_header_present(request.url)) {
+        if(!parse_request_url_is_valid(request.url)) {
             result = (RequestParseResult){
                 .tag = RequestParseResultTypeError,
                 .error = furi_string_alloc_set("Invalid URL"),
@@ -115,7 +140,7 @@ static RequestParseResult parse_request(jerry_value_t obj) {
                 break;
             }
 
-            if(parse_request_extra_header_present(request.method)) {
+            if(!parse_request_method_is_valid(request.method)) {
                 result = (RequestParseResult){
                     .tag = RequestParseResultTypeError,
                     .error = furi_string_alloc_set("Invalid method"),
