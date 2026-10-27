@@ -41,6 +41,14 @@ static void js_app_manifest_reset(JsAppManifest* instance) {
     }
 }
 
+static void js_app_manifest_log_missing_value(const char* key) {
+    FURI_LOG_E(TAG, "Missing or invalid value: %s", key);
+}
+
+static void js_app_manifest_log_invalid_string_value(const char* key, const char* value) {
+    FURI_LOG_E(TAG, "Invalid %s value: %s", key, value);
+}
+
 static bool js_app_manifest_parse_semver(const cJSON* json, const char* key, SemVer* out) {
     bool success = false;
 
@@ -118,7 +126,7 @@ static bool
 
         item = cJSON_GetObjectItem(json, JS_APP_MANIFEST_FORMAT_VERSION_KEY);
         if(!cJSON_IsNumber(item)) {
-            FURI_LOG_W(TAG, "Format version is not a number");
+            js_app_manifest_log_missing_value(JS_APP_MANIFEST_FORMAT_VERSION_KEY);
             break;
         }
 
@@ -130,31 +138,31 @@ static bool
 
         item = cJSON_GetObjectItem(json, JS_APP_MANIFEST_ID_KEY);
         if(!cJSON_IsString(item)) {
-            FURI_LOG_W(TAG, "App id is not a string");
+            js_app_manifest_log_missing_value(JS_APP_MANIFEST_ID_KEY);
             break;
         }
 
         info->id = cJSON_GetStringValue(item);
         if(!js_app_is_valid_id(info->id)) {
-            FURI_LOG_W(TAG, "App id is not valid");
+            js_app_manifest_log_invalid_string_value(JS_APP_MANIFEST_ID_KEY, info->id);
             break;
         }
 
         item = cJSON_GetObjectItem(json, JS_APP_MANIFEST_NAME_KEY);
         if(!cJSON_IsString(item)) {
-            FURI_LOG_W(TAG, "App name is missing");
+            js_app_manifest_log_missing_value(JS_APP_MANIFEST_NAME_KEY);
             break;
         }
 
         info->name = cJSON_GetStringValue(item);
 
         if(!js_app_manifest_parse_version(json, info)) {
-            FURI_LOG_W(TAG, "Failed to parse manifest version");
+            js_app_manifest_log_missing_value(JS_APP_MANIFEST_VERSION_KEY);
             break;
         }
 
         if(!js_app_manifest_parse_api_version(json, info)) {
-            FURI_LOG_W(TAG, "Failed to parse api version");
+            js_app_manifest_log_missing_value(JS_APP_MANIFEST_API_VERSION_KEY);
             break;
         }
 
@@ -173,7 +181,7 @@ static bool
         }
 
         if(!js_app_manifest_parse_heap_size(json, info)) {
-            FURI_LOG_W(TAG, "Failed to parse heap size");
+            js_app_manifest_log_missing_value(JS_APP_MANIFEST_HEAP_SIZE_KEY);
             break;
         }
 
@@ -247,7 +255,7 @@ bool js_app_manifest_load_from_file(JsAppManifest* instance, const char* file_pa
         }
 
         if(!storage_file_open(file, file_path, FSAM_READ, FSOM_OPEN_EXISTING)) {
-            FURI_LOG_E(TAG, "Failed to open file for reading");
+            FURI_LOG_E(TAG, "Failed to open file %s for reading", file_path);
             break;
         }
 
