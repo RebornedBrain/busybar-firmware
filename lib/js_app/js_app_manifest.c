@@ -218,24 +218,24 @@ bool js_app_manifest_load_from_file(JsAppManifest* instance, const char* file_pa
         FileInfo file_info;
 
         if(storage_common_stat(storage, file_path, &file_info) != FSE_OK) {
-            FURI_LOG_W(TAG, "File is not present");
+            FURI_LOG_W(TAG, "File %s is not present", file_path);
             break;
         }
 
         if(file_info_is_dir(&file_info)) {
-            FURI_LOG_E(TAG, "File path is a directory");
+            FURI_LOG_E(TAG, "File path %s is a directory", file_path);
             break;
         }
 
         const uint32_t file_size = file_info.size;
 
         if(file_size == 0) {
-            FURI_LOG_E(TAG, "File is empty");
+            FURI_LOG_E(TAG, "File %s is empty", file_path);
             break;
         }
 
         if(file_size > JS_APP_MANIFEST_MAX_FILE_SIZE) {
-            FURI_LOG_E(TAG, "File is too big");
+            FURI_LOG_E(TAG, "File %s is too big", file_path);
             break;
         }
 
@@ -247,12 +247,12 @@ bool js_app_manifest_load_from_file(JsAppManifest* instance, const char* file_pa
         file_buf = malloc(file_size);
 
         if(storage_file_read(file, file_buf, file_size) != file_size) {
-            FURI_LOG_E(TAG, "Failed to read file");
+            FURI_LOG_E(TAG, "Failed to read file %s", file_path);
             break;
         }
 
         if(!js_app_manifest_parse_data(instance, file_buf, file_size)) {
-            FURI_LOG_E(TAG, "Failed to parse file");
+            FURI_LOG_E(TAG, "Failed to parse file %s", file_path);
             break;
         }
 
